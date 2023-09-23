@@ -23,6 +23,10 @@ jobs:
           echo $CURRENT_VERSION
           echo "LATEST_TAG=$CURRENT_VERSION" >> $GITHUB_ENV
 
+          # Tagging and pushing the change
+          git tag v$CURRENT_VERSION
+          git push origin v$CURRENT_VERSION
+
           # Creating temp changelog file
           git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^^)..HEAD > CHANGELOG.md
 
