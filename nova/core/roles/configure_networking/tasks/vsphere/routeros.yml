@@ -1,8 +1,5 @@
 ---
-- delegate_to: localhost
-  module_defaults:
-    community.vmware.vmware_vm_shell: "{{ vmware_defaults | combine(shell_defaults) }}"
-  block:
+- block:
     - name: Removing default DHCP client addresses...
       community.vmware.vmware_vm_shell:
         vm_shell_args: "{{ item }}"
@@ -33,6 +30,9 @@
         vm_shell_args: "{{ item }}"
       loop: "{{ router_os_networking_commands }}"
 
+  delegate_to: localhost
+  module_defaults:
+    community.vmware.vmware_vm_shell: "{{ vmware_defaults | combine(shell_defaults) }}"
   vars:
     shell_defaults:
       datacenter: "{{ datacenter }}"
