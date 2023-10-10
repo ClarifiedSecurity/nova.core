@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  version_collection_and_tag:
+  version_changelog_relase:
     runs-on: ubuntu-latest
 
     steps:
