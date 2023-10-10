@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+          token: ${{ secrets.WORKFLOWS_PAT }}
 
       - name: Getting current version and generating changelog
         run: |
