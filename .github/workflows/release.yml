@@ -1,9 +1,12 @@
-name: Creating a new release and generating changelog
+name: Creating a new release and changelog
 
 on:
   push:
     branches:
       - main
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   version_changelog_relase:
@@ -23,9 +26,9 @@ jobs:
           echo $CURRENT_VERSION
           echo "LATEST_TAG=$CURRENT_VERSION" >> $GITHUB_ENV
 
-          # Tagging and pushing the change
-          git tag v$CURRENT_VERSION
-          git push origin v$CURRENT_VERSION
+          # Getting upstream tags
+          git fetch --tags https://github.com/novateams/nova.core
+          git push --tags
 
           # Creating temp changelog file
           git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^^)..HEAD > CHANGELOG.md
