@@ -1,0 +1,58 @@
+---
+- block:
+    - name: Get Admin password hash
+      ansible.builtin.shell: 'echo "{{ admin_accounts[0].password  }}" | openssl passwd -6 -stdin'
+      register: pfsense_admin_hash
+
+    - name: Get GT password hash
+      ansible.builtin.shell: 'echo "{{ admin_accounts[1].password }}" | openssl passwd -6 -stdin'
+      register: pfsense_gt_hash
+
+    - name: Templating network configuration script...
+      ansible.builtin.template:
+        src: config.xml
+        dest: /tmp/{{ project_fullname }}_{{ inventory_hostname }}_config.xml
+        lstrip_blocks: yes
+
+    - name: Getting file info...
+      ansible.builtin.stat:
+        path: /tmp/{{ project_fullname }}_{{ inventory_hostname }}_config.xml
+      register: file_size
+
+    - name: Preparing file upload...
+      ansible.builtin.uri:
+        url: https://{{ vmware_rest_defaults.vcenter_hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm | default(vcenter_vm_info.value[0].vm) }}/guest/filesystem?action=create
+        method: POST
+        headers:
+          vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
+        body:
+          credentials: "{{ rest_api_credentials }}"
+          spec:
+            attributes:
+              overwrite: true
+              size: "{{ file_size.stat.size }}"
+            path: /cf/conf/config.xml
+        status_code: 201
+        body_format: json
+        validate_certs: no
+      register: file_upload_prep
+
+    - name: Uploading file...
+      ansible.builtin.uri:
+        url: "{{ file_upload_prep.json }}"
+        method: PUT
+        headers:
+          vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
+        src: /tmp/{{ project_fullname }}_{{ inventory_hostname }}_config.xml
+        status_code: 200
+        body_format: json
+        validate_certs: no
+    
+    - name: Rebooting {{ custom_vm_name | default(vm_name) }}...
+      vmware.vmware_rest.vcenter_vm_guest_power:
+        state: reboot
+        vm: "{{ created_vm_info.value[0].vm | default(vcenter_vm_info.value[0].vm) }}"
+        vcenter_validate_certs: no
+
+  become: false
+  delegate_to: localhost
