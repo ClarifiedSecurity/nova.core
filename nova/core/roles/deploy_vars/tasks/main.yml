@@ -25,6 +25,7 @@
     username: "{{ vault_username }}"
     password: "{{ vault_password }}"
     validate_certs: "{{ validate_vault_certs }}"
+    mount_point: "{{ deploy_vars_vault_mount_point | default(omit) }}" # The mount point for the secrets engine in Vault will be omitted if empty
     ca_cert: "{{ vault_ca_cert | default(omit) }}" # The path to the CA certificate file which is used to validate the Vault server certificate
   register: deploy_vars_vault_token
   delegate_to: localhost
