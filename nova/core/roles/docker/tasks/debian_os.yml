@@ -30,7 +30,7 @@
         path: /etc/apt/sources.list.d/download_docker_com_linux_debian.list
         state: absent
 
-    # Using copy becuase ansible.builtin.apt_repository does not have a feature to override existing repository in *.list file
+    # Using copy because ansible.builtin.apt_repository does not have a feature to override existing repository in *.list file
     - name: Adding Docker repository...
       ansible.builtin.copy:
         content: |
@@ -62,7 +62,7 @@
         path: /etc/apt/sources.list.d/download_docker_com_linux_{{ ansible_distribution | lower }}.list
         state: absent
 
-    # Using copy becuase ansible.builtin.apt_repository does not have a feature to override existing repository in *.list file
+    # Using copy because ansible.builtin.apt_repository does not have a feature to override existing repository in *.list file
     - name: Adding Docker repository...
       ansible.builtin.copy:
         content: |
