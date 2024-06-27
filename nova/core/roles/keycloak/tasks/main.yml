@@ -4,8 +4,8 @@
     msg: |
       Following variables are required to run this role:
       - keycloak_admin_password
-      - keycloack_postgres_db_password
-  when: keycloak_admin_password == {} or keycloack_postgres_db_password == {}
+      - keycloak_postgres_db_password
+  when: keycloak_admin_password == {} or keycloak_postgres_db_password == {}
 
 - name: Creating following configuration folders...
   ansible.builtin.file:
@@ -33,9 +33,29 @@
   loop:
     - src: keycloak.yml
       dest: docker-compose.yml
-    - src: config.yaml
-      dest: config.yaml
+    - src: config.yml
+      dest: config.yml
 
 - name: Composing Keycloak on {{ inventory_hostname }}...
-  ansible.builtin.command: docker compose -f {{ keycloak_container_config_folder }}/docker-compose.yml up -d
-  changed_when: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ keycloak_container_config_folder }}"
+    state: present
+    wait: true
+
+- name: Finding and restarting proxy container...
+  when:
+    - keycloak_proxy_container_name != {}
+    - template.changed
+  block:
+    - name: Looking for container - {{ keycloak_proxy_container_name }}...
+      community.docker.docker_container_info:
+        name: "{{ keycloak_proxy_container_name }}"
+      register: proxy_container_check
+
+    - name: Restarting {{ keycloak_proxy_container_name }}...
+      community.docker.docker_container:
+        name: "{{ keycloak_proxy_container_name }}"
+        state: started
+        restart: true
+        container_default_behavior: no_defaults
+      when: proxy_container_check.exists

@@ -9,13 +9,13 @@ This role combines the following roles:
 - `nova.core.providentia`
 - `nova.core.nexus`
 
-It's meant for easy deployment of all required services for running a Cyber Exercise.
+It's meant for easy deployment of all required services for running a Cyber Exercise. The role generates and writes it's application default credentials into Vault. The login token for the Vault can be found at `/srv/vault/creds/root_token`.
 
 ## Requirements
 
 - Pre existing/installed and configured Active Directory (AD) server for LDAPs.
 - Pre installed Debian based OS (Ubuntu 22.04 preferred) with SSH & sudo access where the application will be installed if not pre-existing infrastructure is present.
-- TLS certificates under the `/srv/certs` directory for using TLS. Alternatively, the `nova.core.caddy` role can be used to generate self-signed certificates.
+- TLS certificate for all services under the `/srv/certs/{{ fqdn }}_fullchain.crt` must be pre-installed. Alternatively, the `nova.core.caddy` role will generate self-signed certificates.
 - The DNS names defined in `monolith_*` variables must be resolvable from the host where this role is executed from.
 
 ## Role Variables
