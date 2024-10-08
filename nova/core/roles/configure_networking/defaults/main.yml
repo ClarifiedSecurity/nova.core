@@ -6,14 +6,19 @@ ntp_servers:
   - "0.pool.ntp.org"
   - "1.pool.ntp.org"
 dns_server_combined: "{{ dns_servers + dns_servers6 }}"
-reconfigure_network: false # Can be used as as CLI var to re-run the network configuration part. Does not when sudo password is required because of vmware_tools plugin limitations
+configure_networking_pre_roles: [] # List of roles to include before starting the networking configuration tasks
+
+# Can be used as as CLI var to re-run the network configuration part. Does not when sudo password is required because of vmware_tools plugin limitations
+reconfigure_network: false
 mgmt_ip: {}
 netplan_renderer: {}
 primary_ipv4: false # False means that DHCP is used or IP is not present
 primary_ipv6: false # False means that DHCP is used or IP is not present
 
 # VMWare REST API defaults
-admin_account_password: "{{ lookup('community.hashi_vault.hashi_vault', vault_lookup_fragment + 'secret=' + secrets_vault_engine_path | default(environment_name) + '/data/' + secrets_vault_secrets_path | default(project_fullname) + ':' + inventory_hostname + '_' + admin_account) }}"
+admin_account_password:
+  "{{ lookup('community.hashi_vault.hashi_vault', vault_lookup_fragment + 'secret=' + secrets_vault_engine_path | default(environment_name)
+  + '/data/' + secrets_vault_secrets_path | default(project_fullname) + ':' + inventory_hostname + '_' + admin_account) }}"
 rest_api_credentials:
   interactive_session: false
   type: USERNAME_PASSWORD
@@ -41,3 +46,6 @@ extra_routes: [] # Configure extra routes per interfaces.
 configure_networking_panos_enable_ipv6: true # Enable IPv6 on configured interfaces
 configure_networking_panos_primary_dns_server: "{{ dns_servers[0] }}"
 configure_networking_panos_secondary_dns_server: "{{ dns_servers6[0] }}"
+
+# VMWare ESXi
+configure_networking_esxi_mgmt_interface_name: vmk0 # Default name of the management interface for ESXi that will have the IP address configured
