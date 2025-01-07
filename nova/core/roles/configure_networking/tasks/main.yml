@@ -5,9 +5,15 @@
   loop: "{{ configure_networking_pre_roles }}"
   when: configure_networking_pre_roles != []
 
-- name: Configuring VM network in vSphere environment...
-  ansible.builtin.include_tasks: vsphere/main.yml
+- name: Configuring VM network...
   when:
     - customization_context == "host"
     - fresh_deploy or reconfigure_network
-    - infra_env == 'vsphere'
+  block:
+    - name: Configuring VM network in vSphere environment...
+      ansible.builtin.include_tasks: vsphere/main.yml
+      when: infra_env == 'vsphere'
+
+    - name: Configuring VM network in Proxmox environment...
+      ansible.builtin.include_tasks: proxmox/main.yml
+      when: infra_env == 'proxmox'
