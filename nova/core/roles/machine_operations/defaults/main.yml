@@ -122,6 +122,12 @@ machine_operations_linode_vm_password:
   + '/data/' + secrets_vault_secrets_path + ':' + inventory_hostname + '_' + admin_account) }}"
 rebuild: false # Use ctp host rebuild-linode-vm <inventory_hostname> command to rebuild the VM with different size but keeping the data
 
+##################
+# Azure defaults #
+##################
+
+azure_open_ports: "{{ ['22'] if 'os_linux' in group_names else ['22', '3389'] }}"
+
 ###########
 # Proxmox #
 ###########
