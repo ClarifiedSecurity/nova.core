@@ -1,0 +1,14 @@
+---
+- name: Missing required variables...
+  ansible.builtin.fail:
+    msg: |
+      Following variables are required to run this role:
+      - azure_service_principal_secret
+  when: azure_service_principal_secret == {}
+
+- name: Including {{ custom_vm_name | default(vm_name) }} removal tasks...
+  ansible.builtin.include_tasks: remove.yml
+  when: deploy_mode in ['undeploy', 'redeploy']
+
+- name: Including {{ custom_vm_name | default(vm_name) }} creation tasks...
+  ansible.builtin.include_tasks: create.yml
