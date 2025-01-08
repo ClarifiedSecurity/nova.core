@@ -1,0 +1,18 @@
+---
+- name: Creating {{ custom_vm_name | default(vm_name) }} VM in Azure...
+  azure.azcollection.azure_rm_virtualmachine:
+    resource_group: "{{ azure_resource_group }}"
+    name: "{{ custom_vm_name | default(vm_name) }}"
+    short_hostname: "{{ hostname }}"
+    # network_interface_names: "{{ azure_vm_network_interface_names | default(omit) }}"
+    vm_size: "{{ azure_vm_size }}"
+    managed_disk_type: "{{ azure_vm_managed_disk_type | default('StandardSSD_LRS') }}"
+    admin_username: "{{ azure_template_username }}"
+    admin_password: "{{ template_password }}"
+    os_type: "{{ 'Windows' if 'os_windows' in group_names else omit }}"
+    state: present
+    open_ports: "{{ azure_open_ports }}"
+    image: "{{ azure_vm_image }}"
+  delegate_to: localhost
+  become: false
+  register: azure_rm_virtualmachine
