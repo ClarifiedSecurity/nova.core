@@ -21,6 +21,7 @@
   loop: "{{ local_accounts_list }}"
   loop_control:
     label: "{{ item.username }}"
+  retries: 2 # To get past error - usermod: cannot lock /etc/passwd; try again later.
 
 - name: Setting correct password for {{ ansible_deployer_username }}...
   ansible.builtin.set_fact:
