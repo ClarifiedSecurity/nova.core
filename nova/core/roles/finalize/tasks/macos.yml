@@ -1,0 +1,27 @@
+---
+- name: Rebooting MacOS...
+  when: reboot_on_finalize
+  block:
+    - name: Rebooting MacOS...
+      ansible.builtin.raw: reboot
+      changed_when: true
+      async: 0
+      poll: 0
+
+    - name: Waiting until ssh is down for {{ inventory_hostname }}...
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        state: stopped
+        timeout: 1200
+      delegate_to: localhost
+      become: false
+
+    - name: Waiting until ssh is up for {{ inventory_hostname }}...
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        state: started
+        timeout: 1200
+      delegate_to: localhost
+      become: false

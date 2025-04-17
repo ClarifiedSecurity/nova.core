@@ -29,6 +29,10 @@
               ansible.builtin.include_tasks: unix.yml
               when: ansible_system in ["FreeBSD", "Linux"]
 
+            - name: Including MacOS finalization tasks...
+              ansible.builtin.include_tasks: macos.yml
+              when: ansible_system == "Darwin"
+
         - name: Configuring Network OS accounts...
           when: ansible_network_os is defined
           block:

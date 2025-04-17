@@ -1,4 +1,10 @@
 ---
 - name: Updating MacOS...
-  ansible.builtin.raw: softwareupdate -i -a --agree-to-license -R
+  ansible.builtin.raw: softwareupdate --install --all --agree-to-license
+  register: macos_softwareupdate
   changed_when: true
+
+- name: Setting reboot_on_finalize to true... # This will reboot the host during nova.core.finalize role
+  ansible.builtin.set_fact:
+    reboot_on_finalize: true
+  when: macos_softwareupdate.stdout_lines[-1] | regex_search('.*Downloaded.*')
