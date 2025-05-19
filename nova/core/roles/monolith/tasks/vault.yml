@@ -18,7 +18,7 @@
     secrets_vault_secrets_path: vault
 
 - name: Trusting Vault generated Root CA...
-  when: vault_root_ca_pki_engine_name is defined # This means that CA was also installed and configured with the Vault role
+  when: vault_root_cas[0].vault_root_ca_pki_engine_name is defined # This means that CA was also installed and configured with the Vault role
   block:
     - name: Including nova.core.trusted_certificates role...
       ansible.builtin.include_role:
@@ -26,7 +26,7 @@
       vars:
         trusted_certificates_list:
           - name: "{{ vault_root_ca_name }}"
-            src: https://{{ monolith_vault_fqdn }}/v1/{{ vault_root_ca_pki_engine_name }}/ca/pem
+            src: https://{{ monolith_vault_fqdn }}/v1/{{ vault_root_cas[0].vault_root_ca_pki_engine_name }}/ca/pem
 
     - name: Getting Root CA certificate contents...
       ansible.builtin.slurp:
