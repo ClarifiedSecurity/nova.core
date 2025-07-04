@@ -167,31 +167,6 @@ nexus_default_repositories:
         policyNames:
           - default-cleanup-policy
 
-  # Ubuntu noble-backports apt proxy
-  - api_endpoint: https://{{ nexus_fqdn }}/service/rest/v1/repositories/apt/proxy
-    repo_body:
-      name: noble-backports
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-      proxy:
-        remoteUrl: http://archive.ubuntu.com/ubuntu
-        contentMaxAge: 15
-        metadataMaxAge: 15
-      negativeCache:
-        enabled: true
-        timeToLive: 1440
-      httpClient:
-        blocked: false
-        autoBlock: false
-      apt:
-        distribution: noble-backports
-        flat: false
-      cleanup:
-        policyNames:
-          - default-cleanup-policy
-
   # Ubuntu noble-security apt proxy
   - api_endpoint: https://{{ nexus_fqdn }}/service/rest/v1/repositories/apt/proxy
     repo_body:
@@ -212,31 +187,6 @@ nexus_default_repositories:
         autoBlock: false
       apt:
         distribution: noble-security
-        flat: false
-      cleanup:
-        policyNames:
-          - default-cleanup-policy
-
-  # Ubuntu noble-updates apt proxy
-  - api_endpoint: https://{{ nexus_fqdn }}/service/rest/v1/repositories/apt/proxy
-    repo_body:
-      name: noble-updates
-      online: true
-      storage:
-        blobStoreName: default
-        strictContentTypeValidation: true
-      proxy:
-        remoteUrl: http://archive.ubuntu.com/ubuntu
-        contentMaxAge: 15
-        metadataMaxAge: 15
-      negativeCache:
-        enabled: true
-        timeToLive: 1440
-      httpClient:
-        blocked: false
-        autoBlock: false
-      apt:
-        distribution: noble-updates
         flat: false
       cleanup:
         policyNames:
