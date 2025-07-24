@@ -10,7 +10,7 @@
 - name: Configuring VM network...
   when:
     - customization_context == "host"
-    - fresh_deploy or reconfigure_network
+    - fresh_deploy or reconfigure_network | bool
   block:
     - name: Saving the original interfaces list...
       ansible.builtin.set_fact:
