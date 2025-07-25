@@ -42,12 +42,6 @@ rest_api_credentials:
 retries_vmware_api: 60
 delay_vmware_api: 3
 
-# List of supported connection modes for what we can configure
-# The connection modes are coming from https://github.com/ClarifiedSecurity/Providentia API
-supported_connection_modes:
-  - ipv4_static
-  - ipv6_static
-
 # Routing options
 extra_routes: [] # Configure extra routes per interfaces.
 
