@@ -1,4 +1,23 @@
 ---
+# This required so this role can clean up the default cloud users if they are not in the local_accounts_with_password list
+- name: Adding source creation flag for default cloud account...
+  when:
+    - infra_env in ['aws', 'openstack']
+    - vars[infra_env ~ '_template_username'] | default('') != admin_account
+  block:
+    - name: Checking if {{ vars[infra_env ~ '_template_username'] | default('') }} user exists...
+      ansible.windows.win_stat:
+        path: C:\Users\{{ vars[infra_env ~ '_template_username'] | default('') }}
+      register: template_user
+
+    - name: Adding account creation source flag for {{ vars[infra_env ~ '_template_username'] | default('') }}...
+      community.windows.win_lineinfile:
+        path: C:\Users\{{ vars[infra_env ~ '_template_username'] | default('') }}\.created
+        line: This account was created with {{ ansible_role_name }} role
+        state: present
+        create: true
+      when: template_user.stat.exists
+
 - name: Configuring Domain Organizational Units...
   ansible.builtin.include_tasks: create_domain_ous.yml
   when: ansible_windows_domain_role == "Primary domain controller"

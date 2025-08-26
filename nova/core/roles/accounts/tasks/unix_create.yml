@@ -10,12 +10,14 @@
 
 # This required so this role can clean up the default cloud users if they are not in the local_accounts_with_password list
 - name: Adding source creation flag for default cloud account...
-  when: infra_env in ['aws', 'openstack']
+  when:
+    - infra_env in ['aws', 'openstack']
+    - vars[infra_env ~ '_template_username'] | default('') != admin_account
   block:
     - name: Checking if {{ vars[infra_env ~ '_template_username'] | default('') }} user exists...
       ansible.builtin.stat:
         path: /home/{{ vars[infra_env ~ '_template_username'] | default('') }}
-      register: aws_template_user
+      register: template_user
 
     - name: Adding account creation source flag for {{ vars[infra_env ~ '_template_username'] | default('') }}...
       ansible.builtin.lineinfile:
@@ -25,7 +27,7 @@
         create: true
         owner: "{{ vars[infra_env ~ '_template_username'] | default('') }}"
         mode: "0600"
-      when: aws_template_user.stat.exists
+      when: template_user.stat.exists
 
 - name: Creating accounts for...
   ansible.builtin.user:

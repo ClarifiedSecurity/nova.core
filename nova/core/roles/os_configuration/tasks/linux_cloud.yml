@@ -3,7 +3,7 @@
 - name: Updating SSHD MaxAuthTries for Cloud {{ inventory_hostname }}...
   when:
     - os_configuration_increase_unix_ssh_maxauthtries
-    - infra_env in ["aws", "linode", "azure"]
+    - infra_env in ["aws", "linode", "azure", "openstack"]
   block:
     - name: Setting SSHD MaxAuthTries to 20...
       ansible.builtin.replace:

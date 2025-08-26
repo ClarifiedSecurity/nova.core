@@ -33,7 +33,7 @@
           amazon.aws.ec2_key:
             name: "{{ custom_vm_name | default(vm_name) }}"
             key_type: ed25519
-            file_name: "{{ temp_ssh_key_path }}"
+            file_name: "{{ machine_operations_aws_temp_ssh_key_path }}"
 
     - name: Configuring AWS EC2 instance for {{ inventory_hostname }}...
       when:
