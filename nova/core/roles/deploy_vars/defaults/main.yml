@@ -154,3 +154,16 @@ proxmox_api_url: https://{{ proxmox_defaults.api_host }}:8006/api2/json
 
 # How long to wait for a Proxmox operation (like clone, powerstate and snapshots) to complete
 proxmox_machine_operations_operation_timeout: 180
+
+#############
+# OpenStack #
+#############
+
+openstack_defaults:
+  auth:
+    auth_url: "{{ openstack_auth_url | default('') }}"
+    username: "{{ openstack_username | default(project_deployer_username) | default(deployer_username) | default('') }}"
+    password: "{{ openstack_password | default(project_deployer_password) | default(deployer_password) | default('') }}"
+    project_id: "{{ openstack_project_id | default('') }}"
+    user_domain_name: "{{ openstack_user_domain_name | default('Default') }}"
+    project_domain_name: "{{ openstack_project_domain_name | default('Default') }}"
