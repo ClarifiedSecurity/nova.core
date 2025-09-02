@@ -52,27 +52,43 @@ class InventoryModule(BaseInventoryPlugin):
     #############################
 
     def timed(func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            if ENABLE_TIMING:
-                start = time.time()
-                result = await func(*args, **kwargs)
-                end = time.time()
-                print(f"[TIMER] {func.__qualname__} took {end - start:.2f}s")
-                return result
-            else:
-                return await func(*args, **kwargs)
-        return wrapper
+        """Decorator to measure execution time of sync or async functions."""
+        if asyncio.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                if ENABLE_TIMING:
+                    start = time.time()
+                    result = await func(*args, **kwargs)
+                    end = time.time()
+                    print(f"[TIMER] {func.__qualname__} took {end - start:.2f}s")
+                    return result
+                else:
+                    return await func(*args, **kwargs)
+            return async_wrapper
+        else:
+            @functools.wraps(func)
+            def sync_wrapper(*args, **kwargs):
+                if ENABLE_TIMING:
+                    start = time.time()
+                    result = func(*args, **kwargs)
+                    end = time.time()
+                    print(f"[TIMER] {func.__qualname__} took {end - start:.2f}s")
+                    return result
+                else:
+                    return func(*args, **kwargs)
+            return sync_wrapper
 
     ############################
     # Inventory initialization #
     ############################
 
+    @timed
     def verify_file(self, path):
         if super(InventoryModule, self).verify_file(path):
             return True
         return False
 
+    @timed
     def parse(self, inventory, loader, path, cache=True):
         '''
             inventory: inventory object with existing data and the methods to add hosts/groups/variables to inventory
@@ -104,6 +120,7 @@ class InventoryModule(BaseInventoryPlugin):
 
         asyncio.run(self.run())
 
+    @timed
     def init_inventory(self):
         self.inventory.add_group("all")
         self.inventory.set_variable("all", "providentia_api_version", 3)
@@ -209,6 +226,7 @@ class InventoryModule(BaseInventoryPlugin):
     # Credentials and token functions #
     ###################################
 
+    @timed
     def fetch_creds(self):
         """
         Retrieve deployer credentials from Ansible Vault in the following order of precedence:
@@ -262,18 +280,25 @@ class InventoryModule(BaseInventoryPlugin):
                 'password': self.get_option('deployer_password')
             }
 
-    def fetch_access_token(self, creds):
+    @timed
+    async def fetch_and_store_access_token(self):
+        """
+        Fetch an OAuth2 access token for Providentia and store it in self._access_token.
+        """
+        # Retrieve deployer credentials
+        creds = self.fetch_creds()
+
+        # Fetch token using requests_oauthlib (LegacyApplicationClient)
         oauth = OAuth2Session(client=LegacyApplicationClient(client_id=self.sso_client_id))
         token = oauth.fetch_token(
             token_url=self.sso_token_url,
             username=creds['username'],
             password=creds['password'],
-            client_id=self.sso_client_id)
+            client_id=self.sso_client_id
+        )
 
-        return token
-
-    async def store_access_token(self):
-        self._access_token = self.fetch_access_token(self.fetch_creds())
+        # Store token in the object
+        self._access_token = token
 
     ###########################
     # Main function execution #
@@ -282,7 +307,7 @@ class InventoryModule(BaseInventoryPlugin):
     @timed
     async def run(self):
         self.init_inventory()
-        await self.store_access_token()
+        await self.fetch_and_store_access_token()
         async with aiohttp.ClientSession() as session:
             self._session = session
             await self.generate_inventory()
