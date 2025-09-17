@@ -118,6 +118,12 @@ machine_operations_aws_security_group_rules:
 linode_api_token: {} # Can be defined in your Ansible Vault
 rebuild: false # Use ctp host rebuild-linode-vm <inventory_hostname> command to rebuild the VM with different size but keeping the data
 
+##################
+# Azure defaults #
+##################
+
+azure_open_ports: "{{ ['22'] if 'os_linux' in group_names else ['22', '3389'] }}"
+
 ###########
 # Proxmox #
 ###########
