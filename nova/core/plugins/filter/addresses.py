@@ -27,6 +27,16 @@ DOCUMENTATION="""
                 - Gets all connection NIC IPv4 gateways. (There's usually only one)
             required: true
             type: str
+        connection_nic_vip_ipv4:
+            description:
+                - Gets all connection NIC VIP IPv4 addresses.
+            required: true
+            type: str
+        connection_nic_vip_ipv4_gw:
+            description:
+                - Gets all connection NIC VIP IPv4 gateways. (There's usually only one)
+            required: true
+            type: str
         connection_nic_ipv6:
             description:
                 - Gets all connection NIC IPv6 addresses.
@@ -44,7 +54,7 @@ DOCUMENTATION="""
             type: str
         egress_nic_ipv4_gw:
             description:
-                - Gets all IPv4 gateways for all egress NICs. There might be more than one if multiple egress NICs are used.
+                - Gets all IPv4 gateways for all egress NICs.
             required: true
             type: str
         egress_nic_ipv6:
@@ -54,7 +64,17 @@ DOCUMENTATION="""
             type: str
         egress_nic_ipv6_gw:
             description:
-                - Gets all IPv6 gateways for all egress NICs. There might be more than one if multiple egress NICs are used.
+                - Gets all IPv6 gateways for all egress NICs.
+            required: true
+            type: str
+        egress_nic_vip_ipv6:
+            description:
+                - Gets all IPv6 VIP addresses for all egress NICs.
+            required: true
+            type: str
+        egress_nic_vip_ipv6_gw:
+            description:
+                - Gets all IPv6 VIP gateways for all egress NICs.
             required: true
             type: str
         mgmt_ipv4:
@@ -68,16 +88,15 @@ DOCUMENTATION="""
             required: true
             type: str
     version_added: 0.1.0
-    notes: This is still an experimental plugin and might change before version 1.0.0
 
 """
 
 EXAMPLES="""
-  - name: Get connection NIC IPv4 addresses
+  - name: Get the first connection NIC IPv4 address
     debug:
       msg: "{{ interfaces | nova.core.addresses('connection_nic_ipv4') | first }}"
 
-  - name: Get connection NIC IPv4 gateway
+  - name: Get the first connection NIC IPv4 gateway
     debug:
       msg: "{{ interfaces | nova.core.addresses('connection_nic_ipv4_gw') | first }}"
 """
@@ -94,14 +113,31 @@ class FilterModule(object):
         filter_functions = {
             'connection_address': self.get_connection_address(interfaces),
             'connection_mode': self.get_connection_mode(interfaces),
+
             'connection_nic_ipv4': self.get_addresses_by_mode(interfaces, 'connection', 'ipv4_static'),
             'connection_nic_ipv4_gw': self.get_gateways_by_mode(interfaces, 'connection', 'ipv4_static'),
+
+            'connection_nic_vip_ipv4': self.get_addresses_by_mode(interfaces, 'connection', 'ipv4_vip'),
+            'connection_nic_vip_ipv4_gw': self.get_gateways_by_mode(interfaces, 'connection', 'ipv4_vip'),
+
             'connection_nic_ipv6': self.get_addresses_by_mode(interfaces, 'connection', 'ipv6_static'),
             'connection_nic_ipv6_gw': self.get_gateways_by_mode(interfaces, 'connection', 'ipv6_static'),
+
+            'connection_nic_vip_ipv6': self.get_addresses_by_mode(interfaces, 'connection', 'ipv6_vip'),
+            'connection_nic_vip_ipv6_gw': self.get_gateways_by_mode(interfaces, 'connection', 'ipv6_vip'),
+
             'egress_nic_ipv4': self.get_addresses_by_mode(interfaces, 'egress', 'ipv4_static'),
             'egress_nic_ipv4_gw': self.get_gateways_by_mode(interfaces, 'egress', 'ipv4_static'),
+
+            'egress_nic_vip_ipv4': self.get_addresses_by_mode(interfaces, 'egress', 'ipv4_vip'),
+            'egress_nic_vip_ipv4_gw': self.get_gateways_by_mode(interfaces, 'egress', 'ipv4_vip'),
+
             'egress_nic_ipv6': self.get_addresses_by_mode(interfaces, 'egress', 'ipv6_static'),
             'egress_nic_ipv6_gw': self.get_gateways_by_mode(interfaces, 'egress', 'ipv6_static'),
+
+            'egress_nic_vip_ipv6': self.get_addresses_by_mode(interfaces, 'egress', 'ipv6_vip'),
+            'egress_nic_vip_ipv6_gw': self.get_gateways_by_mode(interfaces, 'egress', 'ipv6_vip'),
+
             'mgmt_ipv4': self.get_mgmt_addresses(interfaces, 'connection', 'ipv4_static'),
             'mgmt_ipv6': self.get_mgmt_addresses(interfaces, 'connection', 'ipv6_static')
         }
@@ -111,16 +147,16 @@ class FilterModule(object):
 
     def get_connection_mode(self, interfaces):
         for interface in interfaces:
-            if interface.get('connection') is True:
+            if interface.get('connection'):
                 for address in interface.get('addresses', []):
-                    if address.get('connection') is True:
+                    if address.get('connection'):
                         return [address.get('mode')]
         return None
 
     def get_addresses_by_mode(self, interfaces, interface_type, mode):
         addresses = []
         for interface in interfaces:
-            if interface.get(interface_type) is True:
+            if interface.get(interface_type):
                 for address in interface.get('addresses', []):
                     if self.validate_address(address, mode):
                         address_val = address['address']
@@ -130,7 +166,7 @@ class FilterModule(object):
     def get_gateways_by_mode(self, interfaces, interface_type, mode):
         gateways = []
         for interface in interfaces:
-            if interface.get(interface_type) is True:
+            if interface.get(interface_type):
                 for address in interface.get('addresses', []):
                     if self.validate_address(address, mode):
                         gateway = address['gateway']
@@ -140,17 +176,18 @@ class FilterModule(object):
     def get_mgmt_addresses(self, interfaces, interface_type, mode):
         addresses = []
         for interface in interfaces:
-            for address in interface.get('addresses', []):
-                if self.validate_mgmt_address(address, mode) and re.match(r'^mgmt-.*', address['pool_id']):
-                    address_val = address['address']
-                    addresses.append(address_val if address_val else 'null')  # Append 'null' if address is an empty string
+            if interface.get(interface_type):
+                for address in interface.get('addresses', []):
+                    if self.validate_mgmt_address(address, mode) and re.match(r'^mgmt-.*', address['pool_id']):
+                        address_val = address['address']
+                        addresses.append(address_val if address_val else 'null')  # Append 'null' if address is an empty string
         return addresses
 
     def get_connection_address(self, interfaces):
         addresses = []
         for interface in interfaces:
             for address in interface.get('addresses', []):
-                if address.get('connection') is True:
+                if address.get('connection'):
                     address_val = address.get('address')
                     addresses.append(address_val if address_val else 'null')
         return addresses
