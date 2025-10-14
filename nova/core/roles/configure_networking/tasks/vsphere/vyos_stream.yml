@@ -17,8 +17,7 @@
 
     - name: Preparing config.wipe upload...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/filesystem?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/filesystem?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -50,8 +49,7 @@
 
     - name: Configuring VyOS network for {{ inventory_hostname }}...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/processes?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/processes?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -89,8 +87,7 @@
 
     - name: Preparing config.boot upload...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/filesystem?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/filesystem?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -122,8 +119,7 @@
 
     - name: Configuring VyOS network for {{ inventory_hostname }}...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/processes?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/processes?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"

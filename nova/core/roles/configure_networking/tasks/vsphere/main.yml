@@ -3,6 +3,11 @@
   become: false
   delegate_to: localhost
   block:
+    - name: Looking up the {{ custom_vm_name | default(vm_name) }} VM...
+      vmware.vmware.guest_info:
+        guest_name: "{{ custom_vm_name | default(vm_name) }}"
+      register: vcenter_vm_info
+
     - name: Waiting for VMware tools to become available...
       community.vmware.vmware_guest_tools_wait:
         name: "{{ custom_vm_name | default(vm_name) }}"

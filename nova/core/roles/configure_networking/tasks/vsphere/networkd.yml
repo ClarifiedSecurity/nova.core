@@ -16,8 +16,7 @@
   block:
     - name: Removing existing systemd-networkd configuration...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/processes?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/processes?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -56,8 +55,7 @@
 
     - name: Preparing interface(s) configuration upload...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/filesystem?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/filesystem?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -114,8 +112,7 @@
 
     - name: Preparing links(s) configuration upload...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/filesystem?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/filesystem?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -152,8 +149,7 @@
 
     - name: Starting networkd & udev services...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/processes?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/processes?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -185,8 +181,7 @@
 
     - name: Preparing resolv.conf upload...
       ansible.builtin.uri:
-        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-          | default(vcenter_vm_info.value[0].vm) }}/guest/filesystem?action=create
+        url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/filesystem?action=create
         method: POST
         headers:
           vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -218,8 +213,7 @@
       block:
         - name: Configuring network interface(s) names on Debian...
           ansible.builtin.uri:
-            url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-              | default(vcenter_vm_info.value[0].vm) }}/guest/processes?action=create
+            url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/processes?action=create
             method: POST
             headers:
               vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -241,8 +235,7 @@
           block:
             - name: Getting DNS from DHCP...
               ansible.builtin.uri:
-                url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-                  | default(vcenter_vm_info.value[0].vm) }}/guest/processes?action=create
+                url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/processes?action=create
                 method: POST
                 headers:
                   vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
@@ -264,8 +257,7 @@
       block:
         - name: Configuring network interface(s) names on Arch...
           ansible.builtin.uri:
-            url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ created_vm_info.value[0].vm
-              | default(vcenter_vm_info.value[0].vm) }}/guest/processes?action=create
+            url: https://{{ vmware_defaults.hostname }}/api/vcenter/vm/{{ vcenter_vm_info.guests[0].moid }}/guest/processes?action=create
             method: POST
             headers:
               vmware-api-session-id: "{{ vcenter_session_api_key.json }}"
