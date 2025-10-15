@@ -70,10 +70,12 @@
                   ansible.builtin.include_role:
                     name: nova.core.win_dc_post_reboot_check
 
-        - name: Removing following domain accounts...
+        # Disabling instead of removing since it's a better practice to keep the account for audit purposes
+        - name: Locking following domain accounts...
           microsoft.ad.user:
             name: "{{ item }}"
-            state: absent
+            state: present
+            account_locked: true
           loop: "{{ domain_users_to_remove }}"
 
     - name: Rebooting non-primary DC to close any open sessions...
