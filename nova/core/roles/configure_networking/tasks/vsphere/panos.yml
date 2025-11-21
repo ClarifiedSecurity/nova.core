@@ -13,10 +13,16 @@
     - name: Configuring MGMT interface on fresh deploy...
       when: fresh_deploy
       block:
-        # This is not an ideal solution but if trying to login to quickly, the PanOS will not accept the credentials or reset you back to login prompt
-        - name: Sleeping for 2 minutes for PanOS to settle down...
-          ansible.builtin.wait_for:
-            timeout: 120
+        # Through testing it seems that when an IP address is reported by VMware Tools, it is ready to accept console input
+        # Otherwise initial login attempt will just fail
+        - name: Waiting for {{ custom_vm_name | default(vm_name) }} to be ready...
+          community.vmware.vmware_guest_tools_wait:
+            name: "{{ custom_vm_name | default(vm_name) }}"
+          register: panos_boot_status
+          until: panos_boot_status.instance.ipv4 is not ansible.builtin.falsy
+            or panos_boot_status.instance.ipv6 is not ansible.builtin.falsy
+          retries: "{{ (configure_networking_panos_boot_wait_time if configure_networking_panos_boot_wait_time >= 5 else 5) // 5 }}"
+          delay: 5
 
         - name: Typing username to {{ custom_vm_name | default(vm_name) }}...
           community.vmware.vmware_guest_sendkey:
