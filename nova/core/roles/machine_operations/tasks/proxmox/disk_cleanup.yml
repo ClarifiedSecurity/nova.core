@@ -44,8 +44,8 @@
         msg:
           Timeout {{ proxmox_machine_operations_operation_timeout }}s reached when trying to remove unreferenced disks for {{ custom_vm_name
           | default(vm_name) }}
-      when: proxmox_disk_cleanup_start_time.ansible_facts.ansible_date_time.epoch | int
-        + proxmox_machine_operations_operation_timeout < ansible_date_time.epoch | int
+      when: proxmox_disk_cleanup_start_time.ansible_facts.ansible_facts.date_time.epoch | int
+        + proxmox_machine_operations_operation_timeout < ansible_facts.date_time.epoch | int
 
     # Under high load the disk cleanup can fail without reporting back an error so looping until the disks are removed
     - name: Re-including disk_cleanup tasks...
