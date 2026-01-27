@@ -34,7 +34,7 @@
         # Excluding failed hosts to get a list of available hosts still in play
         - name: Getting available play hosts...
           ansible.builtin.set_fact:
-            available_play_hosts: "{{ ansible_play_hosts_all | difference(ansible_failed_hosts | default([])) | sort }}"
+            available_play_hosts: "{{ ansible_play_batch | difference(ansible_failed_hosts | default([])) | sort }}"
 
         # Since Proxmox doesn't support locking or queuing operations, creating a limiter file
         # to make sure only one host in the batch is cloning at a time
@@ -46,7 +46,10 @@
               available_play_hosts[available_play_hosts.index(inventory_hostname) - 1] }}.done
             # Timeout is based on the number of hosts in the batch
             # Increasing the timeout by the operation timeout for each host in the batch
-            timeout: "{{ proxmox_machine_operations_operation_timeout * available_play_hosts.index(inventory_hostname) }}"
+            timeout: 10
+          # Not failing for timeout since the file might not exist if the previous host failed
+          register: wait_for_previous_clone
+          failed_when: not wait_for_previous_clone.msg is search("Timeout when waiting for file")
 
         # Cloning needs to happen on the same node where the template is located
         # After that the target node is used to move the VM to the correct node
