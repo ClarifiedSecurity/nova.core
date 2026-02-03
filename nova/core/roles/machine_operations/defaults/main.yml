@@ -15,14 +15,6 @@ vm_name: "{{ inventory_hostname }}" # Defaults to inventory_hostname if nothing 
 # vSphere defaults #
 ####################
 
-# Networking
-extra_interfaces: false
-
-default_interface:
-  - name: "{{ interfaces[0].cloud_id }}"
-    device_type: "{{ vmware_nic_type }}"
-extra_network_interfaces: []
-
 # Hardware
 
 # By default disabling CPU and RAM hot add/remove features to improve performance
