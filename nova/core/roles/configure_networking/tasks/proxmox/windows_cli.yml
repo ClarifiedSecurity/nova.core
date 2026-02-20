@@ -69,6 +69,7 @@
         host: "{{ connection_address }}"
         port: 22
         timeout: "{{ configure_networking_proxmox_timeout }}"
+      when: connection_mode not in ['ipv4_dhcp', 'ipv6_dhcp', 'ipv6_slaac']
 
   rescue:
     - name: WINDOWS NETWORK ERROR
