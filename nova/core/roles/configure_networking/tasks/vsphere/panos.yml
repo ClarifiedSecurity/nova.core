@@ -17,6 +17,15 @@
         - name: Configuring MGMT interface on fresh deploy...
           when: fresh_deploy
           block:
+            - name: Waiting for {{ custom_vm_name | default(vm_name) }} to be ready for console input...
+              community.vmware.vmware_guest_tools_wait:
+                name: "{{ custom_vm_name | default(vm_name) }}"
+              register: panos_boot_status_first
+
+            - name: FIRST {{ inventory_hostname }} BOOT STATUS
+              debug:
+                var: panos_boot_status_first
+
             # When an IP address is reported by VMware Tools, it is ready to accept console input
             # Otherwise initial login attempt will just fail
             - name: Waiting for {{ custom_vm_name | default(vm_name) }} to be ready for console input...
@@ -28,6 +37,10 @@
                 or panos_boot_status.instance.ipv6 is not ansible.builtin.falsy
               retries: "{{ (configure_networking_panos_boot_wait_time if configure_networking_panos_boot_wait_time >= 5 else 5) // 5 }}"
               delay: 5
+
+            - name: LAST {{ inventory_hostname }} BOOT STATUS
+              debug:
+                var: panos_boot_status
 
             - name: Typing username to {{ custom_vm_name | default(vm_name) }}...
               community.vmware.vmware_guest_sendkey:
@@ -282,6 +295,8 @@
                 timeout: 60
 
       rescue:
+        - meta: end_host
+
         - name: NETWORK CONFIGURATION ERROR
           ansible.builtin.fail:
             msg: |
