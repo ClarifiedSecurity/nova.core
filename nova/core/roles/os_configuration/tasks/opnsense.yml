@@ -40,9 +40,10 @@
     owner: root
     group: wheel
 
-- name: Reloading OPNsense configuration for {{ inventory_hostname }}...
-  ansible.builtin.command: /etc/rc.reload_all
-  changed_when: true
+- name: Reloading configuration for {{ inventory_hostname }}...
+  ansible.builtin.service:
+    name: configd
+    state: restarted
 
 - name: Removing local config.xml file...
   ansible.builtin.file:
