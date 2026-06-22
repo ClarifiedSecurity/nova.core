@@ -16,7 +16,7 @@
 - name: Connecting as {{ ansible_deployer_username }}
     to {{ inventory_hostname }}
     using {{ ansible_connection | default('ssh') | upper }}
-    over {{ connection_address_custom | default(connection_address) }}...
+    over {{ connection_address_custom | default(connection_address) }}
   ansible.builtin.set_fact:
     ansible_host: "{{ connection_address_custom | default(connection_address) }}"
     ansible_user: "{{ ansible_deployer_username }}"
