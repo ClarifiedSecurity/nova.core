@@ -1,0 +1,57 @@
+---
+- name: MISSING SECRETS
+  ansible.builtin.fail:
+    msg: |
+      You are missing following secrets:
+
+      {% for variable in required_variables %}
+      {% if vars[variable] is defined %}
+      {% set evaluated = lookup('vars', variable) %}
+      {% if evaluated is ansible.builtin.falsy %}
+        - {{ variable }}
+      {% endif %}
+      {% else %}
+        - {{ variable }}
+      {% endif %}
+      {% endfor %}
+
+      You can add them to your Ansible Vault file or define external lookups in your group_vars/host_vars files.
+  vars:
+    required_variables:
+      - gc_service_account
+  when: google_cloud_service_account is ansible.builtin.falsy
+
+- name: Checking if {{ custom_vm_name | default(vm_name) }} exists...
+  google.cloud.gcp_compute_instance_info:
+    filters:
+      - name = {{ custom_vm_name | default(vm_name) }}
+    zone: "{{ google_cloud_zone }}"
+  become: false
+  delegate_to: localhost
+  register: google_vm_info
+
+- name: Setting fresh_deploy as fact...
+  ansible.builtin.set_fact:
+    fresh_deploy: true
+  when: google_vm_info.resources == [] or deploy_mode == "redeploy"
+
+- name: Including {{ custom_vm_name | default(vm_name) }} removal tasks...
+  ansible.builtin.include_tasks: remove.yml
+  when: deploy_mode in ['undeploy', 'redeploy']
+
+- name: Including networks creation tasks...
+  ansible.builtin.include_tasks: create_networks.yml
+  when:
+    - interfaces != []
+    - machine_operations_google_create_networks
+    - single_role is not defined
+
+- name: Including firewall rules creation tasks...
+  ansible.builtin.include_tasks: create_firewall_rules.yml
+  when:
+    - interfaces != []
+    - machine_operations_google_create_firewall_rules
+    - single_role is not defined
+
+- name: Including {{ custom_vm_name | default(vm_name) }} creation tasks...
+  ansible.builtin.include_tasks: create.yml
