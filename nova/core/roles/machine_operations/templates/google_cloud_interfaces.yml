@@ -1,0 +1,24 @@
+#jinja2: lstrip_blocks: True, trim_blocks: True
+{% if interfaces != [] %}
+{% for interface in interfaces | selectattr('cloud_id') %}
+- network:
+    selfLink: "{{ create_network_result.results[loop.index0].selfLink }}"
+  network_ip: "{{ interface.addresses | map(attribute='address') | ansible.utils.ipaddr('address') | list | first }}"
+  subnetwork:
+    selfLink: "{{ create_subnet_result.results[loop.index0].selfLink }}"
+  {% if machine_operations_google_assign_public_ip and interface.connection %}
+  access_configs:
+    - name: External NAT
+      type: ONE_TO_ONE_NAT
+      nat_ip:
+        address: "{{ google_public_address.address }}"
+  {% endif %}
+{% endfor %}
+{% endif %}
+{% if interfaces == [] and machine_operations_google_assign_public_ip %}
+- access_configs:
+    - name: External NAT
+      type: ONE_TO_ONE_NAT
+      nat_ip:
+        address: "{{ google_public_address.address }}"
+{% endif %}

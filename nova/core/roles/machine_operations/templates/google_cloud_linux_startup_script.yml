@@ -1,0 +1,19 @@
+# Using startup-script since not all images have cloud-init pre-installed
+startup-script: |
+  #!/bin/bash
+
+  cat <<'EOF' >{{ machine_operations_google_temp_sshd_config_path }}
+  PermitRootLogin yes
+  PasswordAuthentication yes
+  MaxAuthTries 30
+  EOF
+  systemctl restart ssh
+  echo root:{{ template_password }} | chpasswd
+
+  # Needed during os_configuration role
+  apt install locales -y
+
+  # Changing sudo for Ubuntu 26.04 since the sudo.rs does not currently work with become in Ansible for GCP images
+  if grep -q resolute /etc/os-release; then
+    update-alternatives --set sudo /usr/bin/sudo.ws
+  fi

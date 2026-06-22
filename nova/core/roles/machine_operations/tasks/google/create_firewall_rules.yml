@@ -1,0 +1,14 @@
+---
+- name: Creating following firewall rules...
+  google.cloud.gcp_compute_firewall:
+    name: "{{ machine_operations_google_firewall_rule.name }}"
+    allowed: "{{ machine_operations_google_firewall_rule.allowed }}"
+    network:
+      selfLink: "{{ create_network_result.results[loop_index].selfLink }}"
+    state: present
+  loop_control:
+    index_var: loop_index
+    label: "{{ machine_operations_google_firewall_rule.name }}"
+  loop: "{{ interfaces }}"
+  become: false
+  delegate_to: localhost

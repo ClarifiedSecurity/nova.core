@@ -1,0 +1,34 @@
+---
+- name: Creating networks for GCP VMs...
+  become: false
+  delegate_to: localhost
+  block:
+    - name: Create following virtual networks...
+      google.cloud.gcp_compute_network:
+        name: "{{ item.cloud_id }}"
+        auto_create_subnetworks: false
+        routing_config:
+          routing_mode: REGIONAL
+        state: present
+      loop: "{{ interfaces | selectattr('cloud_id') }}"
+      loop_control:
+        label: "{{ item.cloud_id }}"
+      register: create_network_result
+      retries: 3 # Retries a request for the case where no network exists yet and multiple machines are being created in parallel
+      delay: 20
+
+    - name: Creating following subnets...
+      google.cloud.gcp_compute_subnetwork:
+        name: "{{ item.cloud_id }}-subnet"
+        network:
+          selfLink: "{{ create_network_result.results[subnet_index].selfLink }}"
+        ip_cidr_range: "{{ item.addresses | map(attribute='address') | map('ansible.utils.ipaddr', 'network/prefix') | list | first }}"
+        region: "{{ google_cloud_region }}"
+        state: present
+      loop: "{{ interfaces | selectattr('cloud_id') }}"
+      loop_control:
+        label: "{{ item.cloud_id }}-subnet"
+        index_var: subnet_index
+      register: create_subnet_result
+      retries: 3 # Retries a request for the case where no network exists yet and multiple machines are being created in parallel
+      delay: 20

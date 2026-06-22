@@ -158,5 +158,5 @@
     port: 22
     state: started
     timeout: 300
-  delegate_to: localhost
   become: false
+  delegate_to: localhost

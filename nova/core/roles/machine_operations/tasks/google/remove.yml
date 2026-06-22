@@ -1,0 +1,20 @@
+---
+- name: Deleting {{ custom_vm_name | default(vm_name) | replace('_', '-') }}...
+  google.cloud.gcp_compute_instance:
+    name: "{{ custom_vm_name | default(vm_name) | replace('_', '-') }}"
+    zone: "{{ google_cloud_zone }}"
+    state: absent
+  become: false
+  delegate_to: localhost
+
+- name: Deleting a static public IP address for {{ custom_vm_name | default(vm_name) }}...
+  google.cloud.gcp_compute_address:
+    name: "{{ custom_vm_name | default(vm_name) }}-public-ip"
+    region: "{{ google_cloud_region }}"
+    state: absent
+  become: false
+  delegate_to: localhost
+
+- name: Stopping play...
+  ansible.builtin.meta: end_host
+  when: deploy_mode == 'undeploy'

@@ -1,7 +1,7 @@
 ---
 - name: Configuring VM connection in vSphere environment...
   ansible.builtin.include_tasks: vsphere.yml
-  when: infra_env == 'vsphere'
+  when: infra_env == "vsphere"
 
 - name: Configuring VM connection in VMware Workstation environment...
   ansible.builtin.include_tasks: vmware_workstation.yml
@@ -9,31 +9,35 @@
 
 - name: Configuring connection for your host... # The laptop or desktop you are running Ansible from
   ansible.builtin.include_tasks: my_host.yml
-  when: infra_env == 'my_host'
+  when: infra_env == "my_host"
 
 - name: Configuring connection in AWS environment...
   ansible.builtin.include_tasks: aws.yml
-  when: infra_env == 'aws'
+  when: infra_env == "aws"
 
 - name: Configuring connection in Azure environment...
   ansible.builtin.include_tasks: azure.yml
-  when: infra_env == 'azure'
+  when: infra_env == "azure"
 
 - name: Configuring connection in Linode environment...
   ansible.builtin.include_tasks: linode.yml
-  when: infra_env == 'linode'
+  when: infra_env == "linode"
 
 - name: Configuring connection in Proxmox environment...
   ansible.builtin.include_tasks: proxmox.yml
-  when: infra_env == 'proxmox'
+  when: infra_env == "proxmox"
 
 - name: Configuring connection in OpenStack environment...
   ansible.builtin.include_tasks: openstack.yml
-  when: infra_env == 'openstack'
+  when: infra_env == "openstack"
+
+- name: Configuring connection in Google Cloud environment...
+  ansible.builtin.include_tasks: google.yml
+  when: infra_env == "google"
 
 - name: Configuring connection for external or pre-existing machine...
   ansible.builtin.include_tasks: external.yml
-  when: infra_env == 'external'
+  when: infra_env == "external"
 
 # Setting PanOS connection parameters here because the correct ansible_host is calculated no matter what infra_env is used
 - name: Setting connection parameters for PanOS {{ inventory_hostname }}...
