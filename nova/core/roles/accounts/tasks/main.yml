@@ -104,7 +104,7 @@
           when: ansible_facts.system | default('') == "Darwin"
             or ansible_custom_facts.system | default('') == "Darwin"
 
-    # Cloud temp keys removal
+    # Cloud temp SSH keys removal
     - name: Removing {{ infra_env }} temp ssh key for {{ inventory_hostname }}...
       ansible.builtin.file:
         path: "{{ lookup('vars', 'machine_operations_' ~ infra_env ~ '_temp_ssh_key_path') | default('') }}"
@@ -112,6 +112,15 @@
       delegate_to: localhost
       become: false
       when: lookup('vars', 'machine_operations_' ~ infra_env ~ '_temp_ssh_key_path') is defined
+
+    # Cloud temp SSHD config removal
+    - name: Removing {{ infra_env }} temp SSHD config for {{ inventory_hostname }}...
+      ansible.builtin.file:
+        path: "{{ machine_operations_google_temp_sshd_config_path | default('') }}"
+        state: absent
+      when:
+        - ansible_facts.system | default('') in ["FreeBSD", "Linux"]
+        - lookup('vars', 'machine_operations_' ~ infra_env ~ '_temp_sshd_config_path') is defined
 
 - name: Including following accounts post-roles...
   ansible.builtin.include_role:
