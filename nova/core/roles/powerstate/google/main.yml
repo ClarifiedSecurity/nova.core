@@ -1,0 +1,47 @@
+---
+- name: UNSUPPORTED POWERSTATE MODE
+  ansible.builtin.debug:
+    msg: Google Cloud does not support the suspend using Ansible, skipping powerstate change.
+  when: suspend | bool
+
+- name: Checking and setting Google Cloud VM powerstate...
+  become: false
+  delegate_to: localhost
+  when: not suspend
+  block:
+    - name: Checking if {{ custom_vm_name | default(vm_name) }} exists...
+      gcp_compute_instance_info:
+        filters:
+          - name = {{ custom_vm_name | default(vm_name) }}
+        zone: "{{ google_cloud_zone }}"
+      become: false
+      delegate_to: localhost
+      register: google_vm_info
+
+    - name: MISSING INSTANCE
+      ansible.builtin.debug:
+        msg: Instance {{ custom_vm_name | default(vm_name) }} does not exist, skipping powerstate change.
+      when: google_vm_info.resources == []
+
+    - name: Running instance powerstate tasks...
+      when: google_vm_info.resources != []
+      block:
+        - name: Restarting {{ custom_vm_name | default(vm_name) }} Google Cloud...
+          google.cloud.gcp_compute_instance:
+            name: "{{ custom_vm_name | default(vm_name) }}"
+            status: TERMINATED
+            zone: "{{ google_cloud_zone }}"
+          when: restart | bool
+
+        - name:
+            Setting {{ custom_vm_name | default(vm_name) }} Google Cloud instance state - {{
+            'started' if poweron | bool else
+            'restarted' if restart | bool else
+            'stopped' if (poweroff or shutdown) | bool }}
+          google.cloud.gcp_compute_instance:
+            name: "{{ custom_vm_name | default(vm_name) }}"
+            status: "{{
+              'RUNNING' if (poweron or restart) | bool else
+              'TERMINATED' if (poweroff or shutdown) | bool
+              }}"
+            zone: "{{ google_cloud_zone }}"
