@@ -246,3 +246,31 @@ machine_operations_openstack_floating_ip_nat_destination: {}
 
 # Set to true to inject the generated keypair to the instance using cloud-init
 machine_operations_openstack_use_keypair: false
+
+################
+# Google Cloud #
+################
+
+# Assign a public IP to the instances connection interface
+machine_operations_google_assign_public_ip: true
+
+machine_operations_google_temp_sshd_config_path: /etc/ssh/sshd_config.d/00-{{ infra_env }}-first-run.conf
+
+# Will try and pre-create the network for a VM based on the interfaces variable
+# Set to false if network(s) are already pre-created by other means
+machine_operations_google_create_networks: true
+
+# Will create firewalls for each network created
+# Needs the interfaces variable to not be empty
+# Set to false if firewalls are already pre-created by other means
+machine_operations_google_create_firewall_rules: true
+
+# Default firewall rules that will be added to each network created
+# Pass the machine_operations_google_firewall_rules variable in your host_vars/group_vars to override the defaults
+# or disable network and firewall creation to fully manage the networks and firewalls by other means
+# Refer to the module documentation for more details:h
+# https://docs.ansible.com/projects/ansible/latest/collections/google/cloud/gcp_compute_firewall_module.html
+machine_operations_google_firewall_rule:
+  name: "{{ item.cloud_id }}-allow-all" # The cloud_id comes from the interfaces list
+  allowed:
+    - ip_protocol: all
