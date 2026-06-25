@@ -20,10 +20,9 @@ services:
       # GitLab keeps custom certs in this folder https://docs.gitlab.com/omnibus/settings/ssl.html#troubleshooting
       - "/usr/local/share/ca-certificates:/etc/gitlab/trusted-certs"
 
-    # Overriding the default healthcheck values to allow longer startup times on low end machines
-    # https://gitlab.com/gitlab-org/omnibus-gitlab/-/blob/master/docker/Dockerfile#L81-82
+    # Overriding the default healthcheck from the GitLab image to be more lenient and allow for longer startup times
     healthcheck:
-      test: /opt/gitlab/bin/gitlab-healthcheck --fail
+      test: curl --fail --silent --output /dev/null http://localhost/projects
       interval: 10s
       retries: 90
       timeout: 30s
