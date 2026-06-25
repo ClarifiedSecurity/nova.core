@@ -81,6 +81,7 @@
         mode: "0644"
       loop_control:
         loop_var: update_disable
+        label: "{{ update_disable.line }}"
       loop:
         - regexp: .*Unattended-Upgrade
           line: APT::Periodic::Unattended-Upgrade "0";
