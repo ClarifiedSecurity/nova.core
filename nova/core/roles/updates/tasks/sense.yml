@@ -1,0 +1,17 @@
+---
+- name: Updating {{ inventory_hostname }}...
+  ansible.builtin.command: opnsense-update -bkp
+  register: opnsense_update
+  changed_when: opnsense_update.stdout is search("Installing.*")
+  when: ansible_network_os | default('') == "opnsense"
+
+- name: Updating {{ inventory_hostname }}...
+  ansible.builtin.command: pfSense-upgrade -d -y
+  register: pfsense_update
+  changed_when: pfsense_update.stdout is search("Installing.*")
+  when: ansible_network_os | default('') == "pfsense"
+
+- name: Rebooting...
+  ansible.builtin.reboot:
+  when: ("Please reboot." in opnsense_update.stdout_lines | default(''))
+    or ("Please reboot." in pfsense_update.stdout_lines | default(''))
