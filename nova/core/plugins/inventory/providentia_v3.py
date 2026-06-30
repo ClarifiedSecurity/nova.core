@@ -230,21 +230,22 @@ class InventoryModule(BaseInventoryPlugin):
     def fetch_creds(self):
         """
         Retrieve deployer credentials from Ansible Vault in the following order of precedence:
-        1. Environment specific credentials eg. dev_providentia_api_token or dev_deployer_username and dev_deployer_password
+        1. Environment and project specific credentials eg. dev_projectA_providentia_api_token or dev_projectA_deployer_username and dev_projectA_deployer_password
         2. Project specific credentials eg. projectA_providentia_api_token or projectA_deployer_username and projectA_deployer_password
-        3. Environment and project specific credentials eg. dev_projectA_providentia_api_token or dev_projectA_deployer_username and dev_projectA_deployer_password
+        3. Environment specific credentials eg. dev_providentia_api_token or dev_deployer_username and dev_deployer_password
+
         4. Default credentials eg. providentia_api_token or deployer_username and deployer_password
 
         API token is preferred over username/password when both are available.
         """
         # Build prefixes in precedence order
         prefixes = []
-        if self.environment:
-            prefixes.append((f"{self.environment}_", 'env_'))
-        if self.project:
-            prefixes.append((f"{self.project}_", 'project_'))
         if self.environment and self.project:
             prefixes.append((f"{self.environment}_{self.project}_", 'project_'))
+        if self.project:
+            prefixes.append((f"{self.project}_", 'project_'))
+        if self.environment:
+            prefixes.append((f"{self.environment}_", 'env_'))
 
         # Check for API token first (preferred over username/password)
         for option_prefix, inv_prefix in prefixes:

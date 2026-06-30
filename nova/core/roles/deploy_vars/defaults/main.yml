@@ -305,6 +305,27 @@ openstack_defaults:
       | default(openstack_project_domain_name)
       | default('Default') }}"
 
+################
+# Google Cloud #
+################
+
+# The content of the service account is the base64 encoded in the json file downloaded from Google Cloud Console.
+# Use base64 -w 0 <service_account_file.json> to encode the file content to base64 and then save it to Ansible Vault
+google_cloud_service_account:
+  "{{ lookup('vars', environment_name | default('') ~ '_gc_service_account')
+  | default(lookup('vars', project_fullname | default('') ~ '_gc_service_account'))
+  | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_gc_service_account'))
+  | default(gc_service_account) | default('') }}"
+
+# Zone and Region are not in module_defaults since not all modules require them and these modules fail if they are in defaults
+google_cloud_zone: europe-north1-b
+google_cloud_region: europe-north1
+
+google_cloud_defaults:
+  auth_kind: serviceaccount
+  project: "{{ google_cloud_project_id | default('') }}"
+  service_account_contents: "{{ google_cloud_service_account | b64decode }}"
+
 ###########
 # FortiOS #
 ###########

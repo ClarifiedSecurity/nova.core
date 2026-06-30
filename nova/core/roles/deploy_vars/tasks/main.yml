@@ -14,8 +14,8 @@
   when: deploy_vars_pre_roles != []
 
 - name: Delegating required tasks to localhost...
-  delegate_to: localhost
   become: false
+  delegate_to: localhost
   block:
     - name: Using {{ deploy_vars_vault_auth_method | upper }} to get auth token for {{ vault_address }}...
       community.hashi_vault.vault_login:

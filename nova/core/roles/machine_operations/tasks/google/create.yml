@@ -1,0 +1,75 @@
+---
+- name: Creating Google Cloud instance...
+  become: false
+  delegate_to: localhost
+  block:
+    - name: Running fresh deploy tasks for Google Cloud...
+      when: fresh_deploy
+      block:
+        - name: Finding latest {{ google_cloud_vm_image.name }} image...
+          google.cloud.gcp_compute_image_info:
+            project: "{{ google_cloud_vm_image.project }}"
+            filters:
+              - name eq .*{{ google_cloud_vm_image.name }}.*
+          register: google_image_info
+
+        - name: Setting template_password as fact...
+          ansible.builtin.set_fact:
+            template_password: "{{ lookup('password', '/dev/null length=17 chars=ascii_lowercase,ascii_uppercase,hexdigits,digits') }}"
+
+        - name: FAILED TO FIND IMAGE
+          ansible.builtin.fail:
+            msg: |
+              Failed to find image matching {{ google_cloud_vm_image.name }} in {{ google_cloud_vm_image.project }} project
+              Verify the image lookup parameters *google_cloud_vm_image* variable:
+              {{ google_cloud_vm_image | to_nice_yaml }}
+          when: google_image_info.resources == []
+
+    - name: Creating a static public IP address for {{ custom_vm_name | default(vm_name) }}...
+      google.cloud.gcp_compute_address:
+        name: "{{ custom_vm_name | default(vm_name) }}-public-ip"
+        region: "{{ google_cloud_region }}"
+        state: present
+      register: google_public_address
+      when: machine_operations_google_assign_public_ip
+
+    # TODO Find a way to clear metadata after deployment to avoid noise in the console
+    - name: Creating {{ custom_vm_name | default(vm_name) }}...
+      google.cloud.gcp_compute_instance:
+        name: "{{ custom_vm_name | default(vm_name) }}"
+        machine_type: "{{ google_cloud_machine_type }}"
+        disks:
+          - auto_delete: true
+            boot: true
+            initialize_params:
+              disk_size_gb: "{{ os_disk_size | default(hardware_primary_disk_size) | default(omit) }}"
+              disk_type: "{{ google_cloud_disk_type | default(omit) }}"
+              source_image: "{{ google_cloud_vm_image.path ~ '/' ~ google_image_info.resources[-1].name | default(omit) }}"
+        network_interfaces: "{{ omit if not fresh_deploy else lookup('ansible.builtin.template', 'google_cloud_interfaces.yml') | from_yaml }}"
+        metadata:
+          "{{ omit if not fresh_deploy else lookup('ansible.builtin.template', 'Configure-CloudWindows.ps1') | from_yaml if 'os_windows' in group_names
+          else lookup('ansible.builtin.template', 'google_cloud_linux_startup_script.yml') | from_yaml }}"
+        zone: "{{ google_cloud_zone }}"
+      register: google_instance
+
+    - name: Installing SSH...
+      ansible.builtin.debug:
+        msg: |
+          Installing and enabling SSH for {{ custom_vm_name | default(vm_name) }}...
+          This may take a few minutes to complete.
+      when:
+        - fresh_deploy
+        - ("os_windows" in group_names)
+
+    - name: Setting connection address to {{ google_instance.networkInterfaces[0].accessConfigs[0].natIP | default('') }}
+      ansible.builtin.set_fact:
+        connection_address: "{{ google_instance.networkInterfaces[0].accessConfigs[0].natIP }}"
+      when: machine_operations_google_assign_public_ip
+
+    - name: Waiting until SSH is up for {{ custom_vm_name | default(vm_name) }} over {{ connection_address }}...
+      ansible.builtin.wait_for:
+        host: "{{ connection_address }}"
+        port: 22
+        state: started
+        timeout: "{{ 600 if 'os_windows' in group_names else 300 }}"
+      when: fresh_deploy
