@@ -1,26 +1,58 @@
 ---
-- name: Checking if sources.list backup exists...
+- name: Checking if kali.sources is used...
   ansible.builtin.stat:
-    path: /etc/apt/sources.list_backup
-  register: apt_backup_file
+    path: /etc/apt/sources.list.d/kali.sources
+  register: kali_sources
 
-- name: Backing up existing sources.list...
-  ansible.builtin.copy:
-    src: /etc/apt/sources.list
-    dest: /etc/apt/sources.list_backup
-    remote_src: true
-    mode: "0644"
-  when: not apt_backup_file.stat.exists
+- name: Configuring kali.sources...
+  when: kali_sources.stat.exists
+  block:
+    - name: Checking if /etc/apt/kali.sources_backup exists...
+      ansible.builtin.stat:
+        path: /etc/apt/kali.sources_backup
+      register: kali_sources_backup
 
-- name: Templating custom kali.list to {{ inventory_hostname }}...
-  ansible.builtin.template:
-    src: kali-sources.list
-    dest: /etc/apt/sources.list
-    mode: "0644"
-  register: apt_sources
+    - name: Backing up existing kali.sources...
+      ansible.builtin.copy:
+        src: /etc/apt/sources.list.d/kali.sources
+        dest: /etc/apt/kali.sources_backup
+        remote_src: true
+        mode: "0644"
+      when: not kali_sources_backup.stat.exists
+
+    - name: Templating custom kali.sources to {{ inventory_hostname }}...
+      ansible.builtin.template:
+        src: kali.sources
+        dest: /etc/apt/sources.list.d/kali.sources
+        mode: "0644"
+      register: kali_sources_templated
+
+- name: Configuring sources.list...
+  when: not kali_sources.stat.exists
+  block:
+    - name: Checking if sources.list backup exists...
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list_backup
+      register: apt_backup_file
+
+    - name: Backing up existing sources.list...
+      ansible.builtin.copy:
+        src: /etc/apt/sources.list
+        dest: /etc/apt/sources.list_backup
+        remote_src: true
+        mode: "0644"
+      when: not apt_backup_file.stat.exists
+
+    - name: Templating custom kali.list to {{ inventory_hostname }}...
+      ansible.builtin.template:
+        src: kali-sources.list
+        dest: /etc/apt/sources.list
+        mode: "0644"
+      register: list_apt_sources
 
 - name: Running apt update... # noqa: no-handler
   ansible.builtin.apt:
     update_cache: true
   retries: 2
-  when: apt_sources.changed
+  when: list_apt_sources.changed | default(false)
+    or kali_sources_templated.changed | default(false)
