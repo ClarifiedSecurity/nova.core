@@ -185,7 +185,7 @@ class FilterModule(object):
         for interface in interfaces:
             if interface.get(interface_type):
                 for address in interface.get('addresses', []):
-                    if self.validate_mgmt_address(address, mode) and re.match(r'^mgmt-.*', address['pool_id']):
+                    if self.validate_mgmt_address(address, mode):
                         address_val = address['address']
                         addresses.append(address_val if address_val else 'null')  # Append 'null' if address is an empty string
         return addresses
@@ -208,7 +208,7 @@ class FilterModule(object):
         return address_info
 
     def validate_address(self, address, mode):
-        return address.get('mode') == mode and address.get('address') and address.get('pool_id').startswith('default-')
+        return address.get('mode') == mode and address.get('address')
 
     def validate_mgmt_address(self, address, mode):
         return address.get('mode') == mode and address.get('address') and address.get('pool_id').startswith('mgmt-')
