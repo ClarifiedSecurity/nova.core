@@ -60,6 +60,11 @@
               architecture: x86_64
           register: found_amis
 
+        - name: NO OS IMAGES FOUND
+          ansible.builtin.fail:
+            msg: No OS images found check the *ami_owner_id* and *ami_name_search_string* variables
+          when: found_amis.images == []
+
         - name: Setting latest found image as instance image...
           ansible.builtin.set_fact:
             ec2_instance_image: "{{ (found_amis.images | sort(attribute='creation_date'))[-1] }}"
