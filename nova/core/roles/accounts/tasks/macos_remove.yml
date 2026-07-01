@@ -12,7 +12,8 @@
 # Filtering out empty lines
 - name: Getting profiles not defined in accounts list...
   ansible.builtin.set_fact:
-    user_profiles_to_remove: "{{ home_profiles.stdout_lines | select('string') | select('regex', '.+')
+    user_profiles_to_remove:
+      "{{ home_profiles.stdout_lines | select('string') | select('regex', '.+')
       | difference(local_accounts_with_password | map(attribute='username')) }}"
 
 - name: Removing stale user accounts and profiles...
@@ -28,28 +29,14 @@
   rescue:
     - name: Handling reboot before removing accounts...
       when: accounts_reboot_before_remove | bool
-      delegate_to: localhost
-      become: false
       block:
-        - name: Restarting {{ custom_vm_name | default(vm_name) }} VM...
-          ansible.builtin.include_role:
-            name: nova.core.powerstate
-          vars:
-            restart: true
-
-        - name: Waiting until ssh is down for {{ inventory_hostname }}...
-          ansible.builtin.wait_for:
-            host: "{{ ansible_host }}"
-            port: 22
-            state: stopped
-            timeout: 300
-
-        - name: Waiting until ssh is up for {{ inventory_hostname }}...
-          ansible.builtin.wait_for:
-            host: "{{ ansible_host }}"
-            port: 22
-            state: started
-            timeout: 300
+        - name: Rebooting
+          ansible.builtin.raw: reboot
+          changed_when: true
+          # Running reboot from ansible.builtin.raw can cause a race condition where the task is marked as failed
+          # because the connection is lost before the reboot command completes.
+          # To avoid this, we can ignore unreachable hosts after issuing the reboot command.
+          ignore_unreachable: true
 
     - name: Removing following accounts...
       ansible.builtin.raw: |
