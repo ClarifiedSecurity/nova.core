@@ -1,7 +1,7 @@
 ---
 - name: Getting trusted certificates...
-  delegate_to: localhost
   become: false
+  delegate_to: localhost
   block:
     - name: Reading trusted certificates list...
       ansible.builtin.slurp:
@@ -31,12 +31,12 @@
 
     - name: Reading downloaded certificates...
       ansible.builtin.slurp:
-        src: "{{ crt_result.dest }}"
+        src: "{{ crt.dest }}"
       loop: "{{ download_trusted_certificates.results }}"
       loop_control:
-        loop_var: crt_result
-        label: "{{ crt_result.dest | default('') }}"
-      when: crt_result.dest is defined
+        loop_var: crt
+        label: "{{ crt.dest | default('') }}"
+      when: crt.dest is defined
       register: slurp_downloaded_certificates
 
 - name: Creating the /usr/local/etc/certs/ directory...
@@ -44,12 +44,12 @@
   changed_when: true
 
 - name: Saving certificates to {{ inventory_hostname }}...
-  ansible.builtin.raw: echo "{{ read_cert.content | b64decode }}" > /usr/local/etc/certs/{{ read_cert.crt.name | default('') }}.crt
+  ansible.builtin.raw: echo "{{ read_cert.content | b64decode }}" > /usr/local/etc/certs/{{ read_cert.crt.crt.name | default(read_cert.crt.name) }}.crt
   changed_when: true
   loop: "{{ slurp_trusted_certificates.results | default([]) + slurp_downloaded_certificates.results | default([]) }}"
   loop_control:
     loop_var: read_cert
-    label: /usr/local/etc/certs/{{ read_cert.crt.name | default('') }}.crt
+    label: /usr/local/etc/certs/{{ read_cert.crt.crt.name | default(read_cert.crt.name) }}.crt
   register: save_local_certs
   when: read_cert.content is defined
 
@@ -60,11 +60,11 @@
     - name: Manually run the following commands from an interactive session on {{ inventory_hostname }} to add the trusted certificates...
       ansible.builtin.debug:
         msg: sudo security add-trusted-cert -d -r trustRoot -k
-          /Library/Keychains/System.keychain /usr/local/etc/certs/{{ read_cert.crt.name | default('') }}.crt
+          /Library/Keychains/System.keychain /usr/local/etc/certs/{{ read_cert.crt.crt.name | default(read_cert.crt.name) }}.crt
       loop: "{{ slurp_trusted_certificates.results | default([]) + slurp_downloaded_certificates.results | default([]) }}"
       loop_control:
         loop_var: read_cert
-        label: /usr/local/etc/certs/{{ read_cert.crt.name | default('') }}.crt
+        label: /usr/local/etc/certs/{{ read_cert.crt.crt.name | default(read_cert.crt.name) }}.crt
       when: read_cert.content is defined
 
     - name: Giving time to read the above commands...

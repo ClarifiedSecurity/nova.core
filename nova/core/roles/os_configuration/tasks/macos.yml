@@ -1,5 +1,5 @@
 ---
-- name: Set hostname
+- name: Setting hostname to {{ hostname }}...
   ansible.builtin.raw: scutil --set {{ item }}
   changed_when: true
   with_items:
@@ -7,7 +7,7 @@
     - LocalHostName {{ hostname }}
     - ComputerName {{ hostname }}
 
-- name: Lineinfile_raw ( /etc/hosts )
+- name: Updating {{ inventory_hostname }} /etc/hosts file with {{ fqdn }} and {{ hostname }}...
   ansible.builtin.raw: |
     line="127.0.1.1 {{ fqdn }} {{ hostname }}"
     file=/etc/hosts
