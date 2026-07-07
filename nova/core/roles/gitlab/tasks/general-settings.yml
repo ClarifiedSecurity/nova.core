@@ -10,6 +10,7 @@
       gitlab_product_usage_data_enabled: "{{ gitlab_general_settings_product_usage_data_enabled | default(false) }}"
     return_content: true
     status_code: [200, 201]
+    timeout: 120 # For some reason this sometimes returns -1 on fresh deploy and update
   when: gitlab_general_settings_product_usage_data_enabled is defined
 
 - name: Set version check ping settings..
