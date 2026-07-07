@@ -28,6 +28,10 @@
           vars:
             restart: true
 
+        - name: Including nova.core.updates role...
+          ansible.builtin.include_role:
+            name: nova.core.updates
+
         - name: Retrying Gnome installation...
           ansible.builtin.apt:
             name: ubuntu-gnome-desktop
@@ -56,6 +60,10 @@
             name: nova.core.powerstate
           vars:
             restart: true
+
+        - name: Including nova.core.updates role...
+          ansible.builtin.include_role:
+            name: nova.core.updates
 
         - name: Retrying Xfce installation...
           ansible.builtin.apt:
