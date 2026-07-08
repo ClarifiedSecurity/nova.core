@@ -80,6 +80,25 @@ mgmt_ipv4_with_prefix: "{{ interfaces | nova.core.addresses('mgmt_ipv4') | first
 mgmt_ipv6: "{{ interfaces | nova.core.addresses('mgmt_ipv6') | first | ansible.utils.ipaddr('address') }}"
 mgmt_ipv6_with_prefix: "{{ interfaces | nova.core.addresses('mgmt_ipv6') | first }}"
 
+###############
+# Credentials #
+###############
+
+# Project deployer credentials that are calculated from the project_fullname and environment_name variables.
+# These can be useful when managing multiple projects and environments with different deployer accounts and passwords.
+# In that case the project_deployer_* variables always give the correct credentials for a specific project
+
+project_deployer_username:
+  "{{ lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_deployer_username')
+  | default(lookup('vars', project_fullname | default('') ~ '_deployer_username'))
+  | default(lookup('vars', environment_name | default('') ~ '_deployer_username'))
+  | default(deployer_username) | default('') }}"
+project_deployer_password:
+  "{{ lookup('vars', environment_name | default('') ~ '_' ~project_fullname | default('') ~ '_deployer_password')
+  | default(lookup('vars', project_fullname | default('') ~ '_deployer_password'))
+  | default(lookup('vars', environment_name | default('') ~ '_deployer_password'))
+  | default(deployer_password) | default('') }}"
+
 #########
 # Vault #
 #########
@@ -98,11 +117,12 @@ deploy_vars_vault_auth_method: ldap # Method used to authenticate to Vault. Can 
 deploy_vars_vault_mount_point: "{{ omit }}" # The mount point for the secrets engine in Vault will be omitted if empty
 vault_ca_cert: "{{ omit }}" # The path to the CA certificate file which is used to validate the Vault server certificate
 vault_auth_method: ldap # Currently in this role ldap or userpass are supported
-vault_username: "{{ env_deployer_username | default(project_deployer_username) | default(env_project_deployer_username) | default(deployer_username) }}"
-vault_password: "{{ env_deployer_password | default(project_deployer_password) | default(env_project_deployer_password) | default(deployer_password) }}"
 validate_vault_certs: true
 vault_access_token: "{{ deploy_vars_vault_token.login.auth.client_token }}" # Comes from Vault token generation task in main.yml
 vault_lookup_fragment: "url={{ vault_address }} token={{ vault_access_token }} " # The space before the ending quote is required
+
+vault_username: "{{ project_deployer_username }}"
+vault_password: "{{ project_deployer_password }}"
 
 ##########
 # VMware #
@@ -112,46 +132,18 @@ validate_vmware_certs: true
 
 vmware_defaults:
   hostname: "{{ vcenter_hostname | default('') }}"
-  username: "{{ vcenter_username
-    | default(env_deployer_username)
-    | default(project_deployer_username)
-    | default(env_project_deployer_username)
-    | default(deployer_username)
-    | default('') }}"
-  password: "{{ vcenter_password
-    | default(env_deployer_password)
-    | default(project_deployer_password)
-    | default(env_project_deployer_password)
-    | default(deployer_password)
-    | default('') }}"
+  username: "{{ vcenter_username | default(project_deployer_username) }}"
+  password: "{{ vcenter_password | default(project_deployer_password) }}"
   validate_certs: "{{ validate_vmware_certs }}"
 
 vmware_rest_defaults:
   vcenter_hostname: "{{ vcenter_hostname | default('') }}"
-  vcenter_username: "{{ vcenter_username
-    | default(env_deployer_username)
-    | default(project_deployer_username)
-    | default(env_project_deployer_username)
-    | default(deployer_username)
-    | default('') }}"
-  vcenter_password: "{{ vcenter_password
-    | default(env_deployer_password)
-    | default(project_deployer_password)
-    | default(env_project_deployer_password)
-    | default(deployer_password)
-    | default('') }}"
+  vcenter_username: "{{ vcenter_username | default(project_deployer_username) }}"
+  vcenter_password: "{{ vcenter_password | default(project_deployer_password) }}"
   vcenter_validate_certs: "{{ validate_vmware_certs }}"
 
-nsx_deployer_username: "{{ nsx_username
-  | default(env_deployer_username)
-  | default(project_deployer_username)
-  | default(env_project_deployer_username)
-  | default(deployer_username | default('') + '@' + ldap_auth_domain | default('')) }}"
-nsx_deployer_password: "{{ nsx_password
-  | default(env_deployer_password)
-  | default(project_deployer_password)
-  | default(env_project_deployer_password)
-  | default(deployer_password | default('')) }}"
+nsx_deployer_username: "{{ nsx_username | default(project_deployer_username ~ '@' ~ ldap_auth_domain | default('')) }}"
+nsx_deployer_password: "{{ nsx_password | default(project_deployer_password) }}"
 
 vmware_workstation:
   connection: ssh
@@ -182,20 +174,20 @@ aws_role_arn: {}
 
 aws_defaults:
   region: "{{ aws_region | default('eu-north-1') }}" # Default is Stockholm
-  access_key:
-    "{{ aws_assumed_role.sts_creds.access_key | default(lookup('vars', environment_name | default('') ~ '_aws_access_key_id'))
-    | default(lookup('vars', project_fullname | default('') ~ '_aws_access_key_id'))
+  access_key: "{{ aws_assumed_role.sts_creds.access_key
     | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_aws_access_key_id'))
+    | default(lookup('vars', project_fullname | default('') ~ '_aws_access_key_id'))
+    | default(lookup('vars', environment_name | default('') ~ '_aws_access_key_id'))
     | default(aws_access_key_id) | default('') }}"
-  secret_key:
-    "{{ aws_assumed_role.sts_creds.secret_key | default(lookup('vars', environment_name | default('') ~ '_aws_access_key'))
-    | default(lookup('vars', project_fullname | default('') ~ '_aws_access_key'))
+  secret_key: "{{ aws_assumed_role.sts_creds.secret_key
     | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_aws_access_key'))
+    | default(lookup('vars', project_fullname | default('') ~ '_aws_access_key'))
+    | default(lookup('vars', environment_name | default('') ~ '_aws_access_key'))
     | default(aws_access_key) | default('') }}"
-  session_token:
-    "{{ aws_assumed_role.sts_creds.session_token | default(lookup('vars', environment_name | default('') ~ '_aws_session_token'))
-    | default(lookup('vars', project_fullname | default('') ~ '_aws_session_token'))
+  session_token: "{{ aws_assumed_role.sts_creds.session_token
     | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_aws_session_token'))
+    | default(lookup('vars', project_fullname | default('') ~ '_aws_session_token'))
+    | default(lookup('vars', environment_name | default('') ~ '_aws_session_token'))
     | default(aws_session_token) | default(omit) }}"
 
 #########
@@ -206,32 +198,36 @@ azure_resource_group: "{{ project_fullname | default('') }}"
 azure_location: westeurope
 azure_defaults:
   # Current subscription ID from https://portal.azure.com/#blade/Microsoft_Azure_Billing/SubscriptionsBlade
-  subscription_id:
-    "{{ lookup('vars', environment_name | default('') ~ '_azure_subscription_id')
+  subscription_id: "{{
+    lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_azure_subscription_id')
     | default(lookup('vars', project_fullname | default('') ~ '_azure_subscription_id'))
-    | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_azure_subscription_id'))
-    | default(azure_subscription_id) | default('') }}"
+    | default(lookup('vars', environment_name | default('') ~ '_azure_subscription_id'))
+    | default(azure_subscription_id) | default('')
+    }}"
 
   # The Service Principal Name's (Service Account used for deployment) ID from
   # https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps
-  client_id:
-    "{{ lookup('vars', environment_name | default('') ~ '_azure_client_id')
+  client_id: "{{
+    lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_azure_client_id')
     | default(lookup('vars', project_fullname | default('') ~ '_azure_client_id'))
-    | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_azure_client_id'))
-    | default(azure_client_id) | default('') }}"
+    | default(lookup('vars', environment_name | default('') ~ '_azure_client_id'))
+    | default(azure_client_id) | default('')
+    }}"
 
   # The current Tenant's ID from https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps
   tenant:
-    "{{ lookup('vars', environment_name | default('') ~ '_azure_tenant_id')
+    "{{ lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_azure_tenant_id')
     | default(lookup('vars', project_fullname | default('') ~ '_azure_tenant_id'))
-    | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_azure_tenant_id'))
-    | default(azure_tenant_id) | default('') }}"
+    | default(lookup('vars', environment_name | default('') ~ '_azure_tenant_id'))
+    | default(azure_tenant_id) | default('')
+    }}"
 
-  secret:
-    "{{ lookup('vars', environment_name | default('') ~ '_azure_service_principal_secret')
+  secret: "{{
+    lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_azure_service_principal_secret')
     | default(lookup('vars', project_fullname | default('') ~ '_azure_service_principal_secret'))
-    | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_azure_service_principal_secret'))
-    | default(azure_service_principal_secret) | default('') }}"
+    | default(lookup('vars', environment_name | default('') ~ '_azure_service_principal_secret'))
+    | default(azure_service_principal_secret) | default('')
+    }}"
 
 ###########
 # Proxmox #
@@ -242,21 +238,24 @@ proxmox_api_url: https://{{ proxmox_defaults.api_host }}:8006/api2/json
 
 proxmox_defaults:
   api_host: "{{ proxmox_api_host | default('') }}"
-  api_user:
-    "{{ lookup('vars', environment_name | default('') ~ '_proxmox_api_user')
+  api_user: "{{
+    lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_proxmox_api_user')
     | default(lookup('vars', project_fullname | default('') ~ '_proxmox_api_user'))
-    | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_proxmox_api_user'))
-    | default(proxmox_api_user) | default('') }}"
-  api_token_id:
-    "{{ lookup('vars', environment_name | default('') ~ '_proxmox_api_token_id')
+    | default(lookup('vars', environment_name | default('') ~ '_proxmox_api_user'))
+    | default(proxmox_api_user) | default('')
+    }}"
+  api_token_id: "{{
+    lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_proxmox_api_token_id')
     | default(lookup('vars', project_fullname | default('') ~ '_proxmox_api_token_id'))
-    | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_proxmox_api_token_id'))
-    | default(proxmox_api_token_id) | default('') }}"
-  api_token_secret:
-    "{{ lookup('vars', environment_name | default('') ~ '_proxmox_api_token_secret')
+    | default(lookup('vars', environment_name | default('') ~ '_proxmox_api_token_id'))
+    | default(proxmox_api_token_id) | default('')
+    }}"
+  api_token_secret: "{{
+    lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_proxmox_api_token_secret')
     | default(lookup('vars', project_fullname | default('') ~ '_proxmox_api_token_secret'))
-    | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_proxmox_api_token_secret'))
-    | default(proxmox_api_token_secret) | default('') }}"
+    | default(lookup('vars', environment_name | default('') ~ '_proxmox_api_token_secret'))
+    | default(proxmox_api_token_secret) | default('')
+    }}"
   validate_certs: "{{ proxmox_validate_certs }}"
   api_timeout: "{{ proxmox_api_timeout }}"
 
@@ -274,18 +273,8 @@ proxmox_api_timeout: 30
 openstack_defaults:
   auth:
     auth_url: "{{ openstack_auth_url | default('') }}"
-    username: "{{ openstack_username
-      | default(env_deployer_username)
-      | default(project_deployer_username)
-      | default(env_project_deployer_username)
-      | default(deployer_username)
-      | default('') }}"
-    password: "{{ openstack_password
-      | default(env_deployer_password)
-      | default(project_deployer_password)
-      | default(env_project_deployer_password)
-      | default(deployer_password)
-      | default('') }}"
+    username: "{{ openstack_username | default(project_deployer_username) }}"
+    password: "{{ openstack_password | default(project_deployer_password) }}"
     project_id:
       "{{ lookup('vars', environment_name | default('') ~ '_openstack_project_id')
       | default(lookup('vars', project_fullname | default('') ~ '_openstack_project_id'))
@@ -311,10 +300,10 @@ openstack_defaults:
 
 # The content of the service account is the base64 encoded in the json file downloaded from Google Cloud Console.
 # Use base64 -w 0 <service_account_file.json> to encode the file content to base64 and then save it to Ansible Vault
-google_cloud_service_account:
-  "{{ lookup('vars', environment_name | default('') ~ '_gc_service_account')
+google_cloud_service_account: "{{
+  lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_gc_service_account')
   | default(lookup('vars', project_fullname | default('') ~ '_gc_service_account'))
-  | default(lookup('vars', environment_name | default('') ~ '_' ~ project_fullname | default('') ~ '_gc_service_account'))
+  | default(lookup('vars', environment_name | default('') ~ '_gc_service_account'))
   | default(gc_service_account) | default('') }}"
 
 # Zone and Region are not in module_defaults since not all modules require them and these modules fail if they are in defaults
