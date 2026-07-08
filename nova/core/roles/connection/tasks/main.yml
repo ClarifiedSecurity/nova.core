@@ -102,3 +102,14 @@
     - ansible_facts.system | default('') == "Win32NT"
     - not role_only
     - not role_only_wp
+
+# Temporary workaround for Ubuntu 26.04 since the sudo.rs does not currently work with become in Ansible
+# It's done here since it needs to happen at a very early stage of the deployment
+# https://github.com/ansible/ansible/pull/86905
+- name: Setting sudo.ws as default for {{ ansible_facts.distribution_release | default('') }}...
+  ansible.builtin.command: update-alternatives --set sudo /usr/bin/sudo.ws
+  changed_when: true
+  when:
+    - ansible_facts.distribution_release | default('') == "resolute"
+    - fresh_deploy | bool
+    - sudo_requires_password | bool
