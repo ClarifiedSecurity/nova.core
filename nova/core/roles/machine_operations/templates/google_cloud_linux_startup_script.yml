@@ -12,8 +12,3 @@ startup-script: |
 
   # Needed during os_configuration role
   apt install locales -y
-
-  # Changing sudo for Ubuntu 26.04 since the sudo.rs does not currently work with become in Ansible for GCP images
-  if grep -q resolute /etc/os-release; then
-    update-alternatives --set sudo /usr/bin/sudo.ws
-  fi
