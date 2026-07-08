@@ -230,56 +230,53 @@ class InventoryModule(BaseInventoryPlugin):
     def fetch_creds(self):
         """
         Retrieve deployer credentials from Ansible Vault in the following order of precedence:
-        1. Environment and project specific credentials eg. dev_projectA_providentia_api_token or dev_projectA_deployer_username and dev_projectA_deployer_password
-        2. Project specific credentials eg. projectA_providentia_api_token or projectA_deployer_username and projectA_deployer_password
-        3. Environment specific credentials eg. dev_providentia_api_token or dev_deployer_username and dev_deployer_password
+        1. env_project_providentia_api_token
+        2. project_providentia_api_token
+        3. env_providentia_api_token
+        4. env_project_deployer_username + env_project_deployer_password
+        5. project_deployer_username + project_deployer_password
+        6. env_deployer_username + env_deployer_password
+        7. providentia_api_token
+        8. deployer_username + deployer_password
 
-        4. Default credentials eg. providentia_api_token or deployer_username and deployer_password
-
-        API token is preferred over username/password when both are available.
+        API token is preferred at each prefixed level, but falls back to all prefixed
+        credential pairs before the unprefixed api token.
+        Username and password must both be defined at the same prefix level.
         """
-        # Build prefixes in precedence order
+
         prefixes = []
         if self.environment and self.project:
-            prefixes.append((f"{self.environment}_{self.project}_", 'project_'))
+            prefixes.append(f"{self.environment}_{self.project}_")
         if self.project:
-            prefixes.append((f"{self.project}_", 'project_'))
+            prefixes.append(f"{self.project}_")
         if self.environment:
-            prefixes.append((f"{self.environment}_", 'env_'))
+            prefixes.append(f"{self.environment}_")
 
-        # Check for API token first (preferred over username/password)
-        for option_prefix, inv_prefix in prefixes:
-            api_token = self._options.get(f"{option_prefix}providentia_api_token")
-            if api_token is not None:
-                self.inventory.set_variable("all", f"{inv_prefix}providentia_api_token", api_token)
+        for prefix in prefixes:
+            api_token = self._options.get(f"{prefix}providentia_api_token")
+            if api_token:
                 return {'api_token': api_token}
 
-        default_api_token = self._options.get('providentia_api_token')
-        if default_api_token is not None:
-            return {'api_token': default_api_token}
-
-        # Fall back to username/password credentials
-        for option_prefix, inv_prefix in prefixes:
-            username = self._options.get(f"{option_prefix}deployer_username")
-            password = self._options.get(f"{option_prefix}deployer_password")
-            if username is not None and password is not None:
-                self.inventory.set_variable("all", f"{inv_prefix}deployer_username", username)
-                self.inventory.set_variable("all", f"{inv_prefix}deployer_password", password)
+        for prefix in prefixes:
+            username = self._options.get(f"{prefix}deployer_username")
+            password = self._options.get(f"{prefix}deployer_password")
+            if username and password:
                 return {'username': username, 'password': password}
 
-        default_username = self.get_option('deployer_username')
-        default_password = self.get_option('deployer_password')
+        api_token = self._options.get("providentia_api_token")
+        if api_token:
+            return {'api_token': api_token}
 
-        if default_username is None:
-            raise AnsibleParserError('Error - deployer_username not found in Ansible vault')
+        username = self._options.get("deployer_username")
+        password = self._options.get("deployer_password")
+        if username and password:
+            return {'username': username, 'password': password}
 
-        if default_password is None:
-            raise AnsibleParserError('Error - deployer_password not found in Ansible vault')
-
-        return {
-            'username': default_username,
-            'password': default_password
-        }
+        raise AnsibleParserError(
+            'Error - No valid Providentia credentials found in Ansible vault, '
+            'please provide a minimum of:\n'
+            'providentia_api_token or deployer_username and deployer_password'
+        )
 
     def fetch_access_token(self, creds):
         if 'api_token' in creds:
