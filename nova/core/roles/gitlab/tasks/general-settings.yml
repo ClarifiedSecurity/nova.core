@@ -10,7 +10,7 @@
       gitlab_product_usage_data_enabled: "{{ gitlab_general_settings_product_usage_data_enabled | default(false) }}"
     return_content: true
     status_code: [200, 201]
-    timeout: 120 # For some reason this sometimes returns -1 on fresh deploy and update
+    timeout: 120
   when: gitlab_general_settings_product_usage_data_enabled is defined
 
 - name: Set version check ping settings..
@@ -24,6 +24,7 @@
       version_check_enabled: "{{ gitlab_general_settings_version_check_enabled | default(false) }}"
     return_content: true
     status_code: [200, 201]
+    timeout: 120
   when: gitlab_general_settings_version_check_enabled is defined
 
 - name: Set usage ping settings..
@@ -37,6 +38,7 @@
       usage_ping_enabled: "{{ gitlab_general_settings_usage_ping_enabled | default(false) }}"
     return_content: true
     status_code: [200, 201]
+    timeout: 120
   when: gitlab_general_settings_usage_ping_enabled is defined
 
 - name: Set gravatar_enabled {{ gitlab_general_settings_gravatar_enabled }}...
@@ -50,6 +52,7 @@
       gravatar_enabled: "{{ gitlab_general_settings_gravatar_enabled }}"
     return_content: true
     status_code: [200, 201]
+    timeout: 120
   when: gitlab_general_settings_gravatar_enabled is defined
 
 - name: Set signup_enabled {{ gitlab_general_settings_signup_enabled }}...
@@ -63,6 +66,7 @@
       signup_enabled: "{{ gitlab_general_settings_signup_enabled }}"
     return_content: true
     status_code: [200, 201]
+    timeout: 120
   when: gitlab_general_settings_signup_enabled is defined
 
 - name: Set CICD Maximum Artifacts Size to {{ gitlab_general_settings_max_artifacts_size }}...
@@ -76,4 +80,5 @@
       max_artifacts_size: "{{ gitlab_general_settings_max_artifacts_size }}"
     return_content: true
     status_code: [200, 201]
+    timeout: 120
   when: gitlab_general_settings_max_artifacts_size is defined
