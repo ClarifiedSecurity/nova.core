@@ -11,9 +11,16 @@
       distribution_release: trixie
       distribution: debian
 
+- name: Getting {{ inventory_hostname }} architecture...
+  ansible.builtin.command: dpkg --print-architecture
+  changed_when: false
+  register: dpkg_architecture
+
 - name: Adding Docker repository for {{ ansible_facts.distribution }}...
   ansible.builtin.deb822_repository:
     name: docker
+    architectures:
+      - "{{ dpkg_architecture.stdout }}"
     types: [deb]
     uris: "{{ docker_apt_proxy | lower }}"
     suites: ["{{ ansible_facts.distribution_release | lower }}"]
