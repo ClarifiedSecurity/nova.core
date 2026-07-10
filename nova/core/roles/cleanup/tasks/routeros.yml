@@ -2,3 +2,4 @@
 - name: Cleaning up RouterOS...
   community.routeros.command:
     commands: "{{ cleanup_routeros_commands }}"
+  retries: 3
