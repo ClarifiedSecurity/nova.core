@@ -161,7 +161,9 @@
         hotplug: "{{ machine_operations_proxmox_hotplug | join(',') }}"
         memory: "{{ omit if not hardware_ram else (hardware_ram * 1024) }}"
         name: "{{ custom_vm_name | default(vm_name) }}"
-        node: "{{ proxmox_node }}"
+        node:
+          "{{ proxmox_node if fresh_deploy or not machine_operations_proxmox_enable_ha
+          else proxmox_vm_exists.proxmox_vms[0].node }}"
         onboot: "{{ machine_operations_proxmox_vm_start_on_boot }}"
         timeout: "{{ proxmox_machine_operations_operation_timeout }}"
         update: true
@@ -246,8 +248,8 @@
         - name: Checking if {{ custom_vm_name | default(vm_name) }} has pending configuration...
           ansible.builtin.uri:
             url:
-              "{{ proxmox_api_url }}/nodes/{{ proxmox_vm_exists.proxmox_vms[0].node }}/qemu/{{
-              proxmox_vm_exists.proxmox_vms[0].vmid | default(machine_operations_proxmox_vmid) }}/pending"
+              "{{ proxmox_api_url }}/nodes/{{ proxmox_node if fresh_deploy or not machine_operations_proxmox_enable_ha
+              else proxmox_vm_exists.proxmox_vms[0].node }}/qemu/{{ proxmox_vm_exists.proxmox_vms[0].vmid | default(machine_operations_proxmox_vmid) }}/pending"
             headers:
               Authorization: PVEAPIToken={{ proxmox_defaults.api_user }}!{{ proxmox_defaults.api_token_id }}={{ proxmox_defaults.api_token_secret }}
             method: GET
