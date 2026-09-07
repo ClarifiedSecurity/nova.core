@@ -13,6 +13,11 @@
   loop: "{{ deploy_vars_pre_roles }}"
   when: deploy_vars_pre_roles != []
 
+- name: Generating updated interfaces list...
+  ansible.builtin.set_fact:
+    interfaces: "{{ interfaces | community.general.lists_mergeby(interfaces_extras, 'cloud_id') }}"
+  when: interfaces_extras != []
+
 - name: Delegating required tasks to localhost...
   become: false
   delegate_to: localhost
