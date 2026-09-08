@@ -7,7 +7,8 @@
   {% endif %}
   "experimental": {{ docker_enable_experimental_features | lower }},
   "features": {
-    "buildkit": {{ docker_buildkit | lower }}
+    "buildkit": {{ docker_buildkit | lower }},
+    "containerd-snapshotter": {{ docker_containerd_snapshotter | lower }}
   },
   "ipv6": {{ docker_enable_ipv6 | lower }},
   {% if docker_firewall_backend == "nftables" %}
