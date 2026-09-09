@@ -116,11 +116,14 @@ class InventoryModule(BaseInventoryPlugin):
     async def generate_inventory(self):
 
         # Run all fetches concurrently
-        hosts, groups, project_info = await asyncio.gather(
+        hosts, groups, project_info, networks = await asyncio.gather(
             self.fetch_from_providentia('inventory'),
             self.fetch_from_providentia('tags'),
-            self.fetch_from_providentia('')
+            self.fetch_from_providentia(''),
+            self.fetch_from_providentia('networks')
         )
+
+        self.inventory.set_variable("all", "providentia_networks", networks['result'])
 
         for key,value in project_info['result'].items():
                 # Replacing nondescriptive keys with more descriptive ones

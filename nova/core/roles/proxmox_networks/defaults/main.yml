@@ -1,0 +1,43 @@
+---
+# Providentia /api/v3/<environment>/networks export from nova.core.providentia_v3.
+proxmox_networks_source: "{{ providentia_networks | default([]) }}"
+
+# Modes:
+# - plan: print desired SDN state and current Proxmox presence without changing anything
+# - deploy: create missing zones, VNets and subnets, but leave existing VNets untouched
+# - sync: create missing resources and update existing SDN resources to match Providentia
+proxmox_networks_mode: deploy
+
+# Only networks with config_map.proxmox.managed=true are managed unless this is set.
+proxmox_networks_manage_all: false
+proxmox_networks_manage_subnets: true
+
+# Exercise-level default zone. Override this in group_vars, vault, or extra vars.
+proxmox_networks_zone:
+  name: "{{ providentia_project_id | default(project_fullname | default('nova')) }}"
+  type: simple
+
+# When enabled, the first managed Providentia network with config_map.proxmox.zone
+# becomes the default zone for every managed network that does not define its own.
+proxmox_networks_use_first_providentia_zone: true
+
+proxmox_networks_vnet_defaults:
+  isolate_ports: false
+
+proxmox_networks_subnet_defaults:
+  snat: false
+  dhcp_range: []
+  dhcp_range_update_mode: append
+
+proxmox_networks_supported_zone_types:
+  - simple
+  - vlan
+  - qinq
+  - vxlan
+  - evpn
+  - faucet
+
+# Proxmox documents VNet IDs as up to 8 characters. Keep this enabled so a
+# Providentia cloud_id fails early instead of failing midway through SDN deploy.
+proxmox_networks_validate_vnet_id_length: true
+proxmox_networks_vnet_id_max_length: 8
