@@ -1,0 +1,170 @@
+---
+- name: Reconcile Proxmox SDN networks from Providentia...
+  run_once: true
+  delegate_to: localhost
+  become: false
+  block:
+    - name: Building desired Proxmox SDN network list from Providentia...
+      ansible.builtin.set_fact:
+        proxmox_networks_desired: "{{ lookup('ansible.builtin.template', 'desired_networks.yml.j2') | from_yaml | default([], true) }}"
+
+    - name: Validating Proxmox SDN network mode...
+      ansible.builtin.assert:
+        that:
+          - proxmox_networks_mode in ['plan', 'deploy', 'sync']
+        fail_msg: "proxmox_networks_mode must be one of: plan, deploy, sync"
+
+    - name: MISSING SECRETS
+      ansible.builtin.fail:
+        msg: |
+          You are missing following secrets:
+
+          {% for variable in required_variables %}
+          {% if vars[variable] is defined %}
+          {% set evaluated = lookup('vars', variable) %}
+          {% if evaluated is ansible.builtin.falsy %}
+            - {{ variable }}
+          {% endif %}
+          {% else %}
+            - {{ variable }}
+          {% endif %}
+          {% endfor %}
+
+          You can add them to your Ansible Vault file or define external lookups in your group_vars/host_vars files.
+      vars:
+        required_variables:
+          - proxmox_api_user
+          - proxmox_api_token_id
+          - proxmox_api_token_secret
+      when:
+        - proxmox_networks_desired | length > 0
+        - proxmox_defaults.api_user is ansible.builtin.falsy
+          or proxmox_defaults.api_token_id is ansible.builtin.falsy
+          or proxmox_defaults.api_token_secret is ansible.builtin.falsy
+
+    - name: Validating desired Proxmox SDN networks...
+      ansible.builtin.assert:
+        that:
+          - item.zone.name | default('') | string | length > 0
+          - item.zone.type | default('simple') in proxmox_networks_supported_zone_types
+          - item.zone.type | default('simple') != 'vlan' or item.zone.bridge | default('') | string | length > 0
+          - not proxmox_networks_validate_sdn_ids | bool or item.zone.name is match('^[A-Za-z][A-Za-z0-9]*$')
+          - not proxmox_networks_validate_sdn_ids | bool or item.zone.name | length >= proxmox_networks_zone_id_min_length | int
+          - not proxmox_networks_validate_sdn_ids | bool or item.zone.name | length <= proxmox_networks_zone_id_max_length | int
+          - not proxmox_networks_validate_sdn_ids | bool or item.cloud_id is match('^[A-Za-z][A-Za-z0-9]*$')
+          - not proxmox_networks_validate_sdn_ids | bool or item.cloud_id | length >= proxmox_networks_vnet_id_min_length | int
+          - not proxmox_networks_validate_sdn_ids | bool or item.cloud_id | length <= proxmox_networks_vnet_id_max_length | int
+        fail_msg: |
+          Invalid Proxmox SDN configuration for Providentia network {{ item.network_id }} instance {{ item.cloud_id }}.
+          SDN zone and VNet IDs must start with a letter, contain only letters and numbers, and be short identifiers.
+          Zone IDs must be {{ proxmox_networks_zone_id_min_length }}-{{ proxmox_networks_zone_id_max_length }} characters.
+          VNet IDs must be {{ proxmox_networks_vnet_id_min_length }}-{{ proxmox_networks_vnet_id_max_length }} characters.
+          VLAN zones must also define zone.bridge.
+      loop: "{{ proxmox_networks_desired }}"
+      loop_control:
+        label: "{{ item.cloud_id | default(item.network_id) }}"
+
+    - name: Reading existing Proxmox SDN zones...
+      community.proxmox.proxmox_zone_info:
+      register: proxmox_networks_existing_zones_result
+      when: proxmox_networks_desired | length > 0
+
+    - name: Reading existing Proxmox SDN VNets...
+      community.proxmox.proxmox_vnet_info:
+      register: proxmox_networks_existing_vnets_result
+      when: proxmox_networks_desired | length > 0
+
+    - name: Setting existing Proxmox SDN resource facts...
+      ansible.builtin.set_fact:
+        proxmox_networks_existing_zone_names: "{{ proxmox_networks_existing_zones_result.zones | default([]) | map(attribute='zone') | list }}"
+        proxmox_networks_existing_vnet_names: "{{ proxmox_networks_existing_vnets_result.vnets | default([]) | map(attribute='vnet') | list }}"
+
+    - name: Proxmox SDN network plan...
+      ansible.builtin.debug:
+        msg: |
+          Desired managed Providentia networks: {{ proxmox_networks_desired | length }}
+          Existing Proxmox SDN zones: {{ proxmox_networks_existing_zone_names | default([]) | join(', ') }}
+          Existing Proxmox SDN VNets: {{ proxmox_networks_existing_vnet_names | default([]) | join(', ') }}
+
+          {% for network in proxmox_networks_desired %}
+          - {{ network.cloud_id }} in zone {{ network.zone.name }} ({{ network.zone.type }})
+            zone: {{ 'exists' if network.zone.name in proxmox_networks_existing_zone_names | default([]) else 'missing' }}
+            vnet: {{ 'exists' if network.cloud_id in proxmox_networks_existing_vnet_names | default([]) else 'missing' }}
+            subnets: {{ network.subnets | map(attribute='subnet') | list | join(', ') if network.subnets else 'none' }}
+          {% endfor %}
+      when: proxmox_networks_mode == 'plan' or proxmox_networks_desired | length == 0
+
+    - name: Creating missing Proxmox SDN zones...
+      community.proxmox.proxmox_zone:
+        state: present
+        update: "{{ proxmox_networks_mode == 'sync' }}"
+        zone: "{{ item.name }}"
+        type: "{{ item.type | default('simple') }}"
+        advertise_subnets: "{{ item.advertise_subnets | default(omit) }}"
+        bridge: "{{ item.bridge | default(omit) }}"
+        bridge_disable_mac_learning: "{{ item.bridge_disable_mac_learning | default(omit) }}"
+        controller: "{{ item.controller | default(omit) }}"
+        dhcp: "{{ item.dhcp | default(omit) }}"
+        disable_arp_nd_suppression: "{{ item.disable_arp_nd_suppression | default(omit) }}"
+        dns: "{{ item.dns | default(omit) }}"
+        dnszone: "{{ item.dnszone | default(omit) }}"
+        dp_id: "{{ item.dp_id | default(omit) }}"
+        exitnodes: "{{ item.exitnodes | default(omit) }}"
+        exitnodes_local_routing: "{{ item.exitnodes_local_routing | default(omit) }}"
+        exitnodes_primary: "{{ item.exitnodes_primary | default(omit) }}"
+        fabric: "{{ item.fabric | default(omit) }}"
+        ipam: "{{ item.ipam | default(omit) }}"
+        mac: "{{ item.mac | default(omit) }}"
+        mtu: "{{ item.mtu | default(omit) }}"
+        nodes: "{{ item.nodes | default(omit) }}"
+        peers: "{{ item.peers | default(omit) }}"
+        reversedns: "{{ item.reversedns | default(omit) }}"
+        rt_import: "{{ item.rt_import | default(omit) }}"
+        tag: "{{ item.tag | default(omit) }}"
+        vlan_protocol: "{{ item.vlan_protocol | default(omit) }}"
+        vrf_vxlan: "{{ item.vrf_vxlan | default(omit) }}"
+        vxlan_port: "{{ item.vxlan_port | default(omit) }}"
+      loop: "{{ proxmox_networks_desired | map(attribute='zone') | unique(attribute='name') | list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when:
+        - proxmox_networks_mode in ['deploy', 'sync']
+        - proxmox_networks_desired | length > 0
+        - proxmox_networks_mode == 'sync' or item.name not in proxmox_networks_existing_zone_names
+
+    - name: Creating missing Proxmox SDN VNets...
+      community.proxmox.proxmox_vnet:
+        state: present
+        update: "{{ proxmox_networks_mode == 'sync' }}"
+        vnet: "{{ item.cloud_id }}"
+        zone: "{{ item.zone.name }}"
+        alias: "{{ item.vnet.alias | default(omit) }}"
+        isolate_ports: "{{ item.vnet.isolate_ports | default(omit) }}"
+        tag: "{{ item.vnet.tag | default(omit) }}"
+        vlanaware: "{{ item.vnet.vlanaware | default(omit) }}"
+      loop: "{{ proxmox_networks_desired }}"
+      loop_control:
+        label: "{{ item.cloud_id }}"
+      when:
+        - proxmox_networks_mode in ['deploy', 'sync']
+        - proxmox_networks_mode == 'sync' or item.cloud_id not in proxmox_networks_existing_vnet_names
+
+    - name: Creating Proxmox SDN subnets for managed VNets...
+      community.proxmox.proxmox_subnet:
+        state: present
+        update: "{{ proxmox_networks_mode == 'sync' }}"
+        zone: "{{ item.0.zone.name }}"
+        vnet: "{{ item.0.cloud_id }}"
+        subnet: "{{ item.1.subnet }}"
+        gateway: "{{ item.1.gateway | default(omit, true) }}"
+        snat: "{{ item.1.snat | default(omit) }}"
+        dhcp_range: "{{ item.1.dhcp_range | default(omit) }}"
+        dhcp_range_update_mode: "{{ item.1.dhcp_range_update_mode | default(omit) }}"
+        dhcp_dns_server: "{{ item.1.dhcp_dns_server | default(omit, true) }}"
+        dnszoneprefix: "{{ item.1.dnszoneprefix | default(omit, true) }}"
+      loop: "{{ proxmox_networks_desired | subelements('subnets', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.cloud_id }} {{ item.1.subnet }}"
+      when:
+        - proxmox_networks_mode in ['deploy', 'sync']
+        - proxmox_networks_mode == 'sync' or item.0.cloud_id not in proxmox_networks_existing_vnet_names

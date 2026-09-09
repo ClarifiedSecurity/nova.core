@@ -1,0 +1,64 @@
+---
+{% set default_zone = namespace(value=proxmox_networks_zone, found=false) %}
+{% for network in proxmox_networks_source | default([]) %}
+{% for instance in network.instances | default([]) %}
+{% set config_map = instance.config_map if instance.config_map is mapping else {} %}
+{% set proxmox_config = config_map.proxmox | default({}) %}
+{% if proxmox_networks_use_first_providentia_zone | bool and not default_zone.found and proxmox_config.zone is mapping and (proxmox_config.managed | default(proxmox_networks_manage_all) | bool) %}
+{% set default_zone.value = proxmox_networks_zone | combine(proxmox_config.zone, recursive=True) %}
+{% set default_zone.found = true %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% for network in proxmox_networks_source | default([]) %}
+{% for instance in network.instances | default([]) %}
+{% set config_map = instance.config_map if instance.config_map is mapping else {} %}
+{% set proxmox_config = config_map.proxmox | default({}) %}
+{% if instance.cloud_id | default('') | string | length > 0 and (proxmox_config.managed | default(proxmox_networks_manage_all) | bool) %}
+{% set zone_config = default_zone.value | combine(proxmox_config.zone | default({}), recursive=True) %}
+{% set vnet_config = proxmox_networks_vnet_defaults | combine(proxmox_config.vnet | default({}), recursive=True) %}
+{% set subnet_config = proxmox_networks_subnet_defaults | combine(proxmox_config.subnet | default({}), recursive=True) %}
+- network_id: "{{ network.id }}"
+  network_name: "{{ network.name }}"
+  actor: "{{ network.actor }}"
+  actor_nr: {{ instance.actor_nr | default('null', true) }}
+  cloud_id: "{{ instance.cloud_id }}"
+  zone:
+    name: "{{ zone_config.name }}"
+    type: "{{ zone_config.type | default('simple') }}"
+{% for option in ['advertise_subnets', 'bridge', 'bridge_disable_mac_learning', 'controller', 'dhcp', 'disable_arp_nd_suppression', 'dns', 'dnszone', 'dp_id', 'exitnodes', 'exitnodes_local_routing', 'exitnodes_primary', 'fabric', 'ipam', 'mac', 'mtu', 'nodes', 'peers', 'reversedns', 'rt_import', 'tag', 'vlan_protocol', 'vrf_vxlan', 'vxlan_port'] %}
+{% if zone_config[option] is defined %}
+    {{ option }}: {{ zone_config[option] | to_json }}
+{% endif %}
+{% endfor %}
+  vnet:
+    alias: {{ vnet_config.alias | default(network.name) | to_json }}
+{% for option in ['isolate_ports', 'tag', 'vlanaware'] %}
+{% if vnet_config[option] is defined %}
+    {{ option }}: {{ vnet_config[option] | to_json }}
+{% endif %}
+{% endfor %}
+  subnets:
+{% set emitted_subnet = namespace(count=0) %}
+{% for pool in instance.address_pools | default([]) %}
+{% if proxmox_networks_manage_subnets | bool and subnet_config.enabled | default(true) | bool and pool.network_address | default('') | string | length > 0 %}
+{% set emitted_subnet.count = emitted_subnet.count + 1 %}
+    - subnet: "{{ pool.network_address }}"
+      gateway: {{ pool.gateway | default(none) | to_json }}
+      snat: {{ subnet_config.snat | default(false) | to_json }}
+      dhcp_range: {{ subnet_config.dhcp_range | default([]) | to_json }}
+      dhcp_range_update_mode: "{{ subnet_config.dhcp_range_update_mode | default('append') }}"
+{% if subnet_config.dhcp_dns_server is defined %}
+      dhcp_dns_server: {{ subnet_config.dhcp_dns_server | to_json }}
+{% endif %}
+{% if subnet_config.dnszoneprefix is defined %}
+      dnszoneprefix: {{ subnet_config.dnszoneprefix | to_json }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% if emitted_subnet.count == 0 %}
+    []
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endfor %}
