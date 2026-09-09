@@ -22,8 +22,10 @@ without changing Proxmox.
 
 ## Providentia network config
 
-Set the network `cloud_id` to the Proxmox VNet ID. Proxmox documents VNet IDs as
-up to 8 characters, so keep `cloud_id` short for SDN-managed networks.
+Set the network `cloud_id` to the Proxmox VNet ID. Proxmox SDN zone and VNet IDs
+are short identifiers: 2-8 characters, starting with a letter, using only
+letters and numbers. Use the Providentia network name/description or the VNet
+alias for longer display names.
 
 Add this to the network config map:
 
@@ -31,8 +33,10 @@ Add this to the network config map:
 proxmox:
   managed: true
   zone:
-    name: cyberexercise
+    name: lcde
     type: simple
+  vnet:
+    alias: "Loughborough Cyber Defence Exercise - access"
 ```
 
 By default, the first managed Providentia network with `proxmox.zone` becomes
@@ -44,7 +48,7 @@ The exercise-level zone can also be overridden in Catapult:
 
 ```yaml
 proxmox_networks_zone:
-  name: cyberexercise
+  name: lcde
   type: simple
 ```
 
@@ -53,7 +57,7 @@ or edit physical/node bridges.
 
 ```yaml
 proxmox_networks_zone:
-  name: cyberexercise
+  name: lcde
   type: vlan
   bridge: vmbr0
 ```

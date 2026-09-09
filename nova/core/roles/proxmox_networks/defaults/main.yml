@@ -37,7 +37,10 @@ proxmox_networks_supported_zone_types:
   - evpn
   - faucet
 
-# Proxmox documents VNet IDs as up to 8 characters. Keep this enabled so a
-# Providentia cloud_id fails early instead of failing midway through SDN deploy.
-proxmox_networks_validate_vnet_id_length: true
+# Proxmox SDN zone and VNet IDs must be short identifiers, not display names.
+# Use Providentia names/descriptions or VNet aliases for longer labels.
+proxmox_networks_validate_sdn_ids: true
+proxmox_networks_zone_id_min_length: 2
+proxmox_networks_zone_id_max_length: 8
+proxmox_networks_vnet_id_min_length: 2
 proxmox_networks_vnet_id_max_length: 8

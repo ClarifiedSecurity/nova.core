@@ -48,10 +48,18 @@
           - item.zone.name | default('') | string | length > 0
           - item.zone.type | default('simple') in proxmox_networks_supported_zone_types
           - item.zone.type | default('simple') != 'vlan' or item.zone.bridge | default('') | string | length > 0
-          - not proxmox_networks_validate_vnet_id_length | bool or item.cloud_id | length <= proxmox_networks_vnet_id_max_length | int
+          - not proxmox_networks_validate_sdn_ids | bool or item.zone.name is match('^[A-Za-z][A-Za-z0-9]*$')
+          - not proxmox_networks_validate_sdn_ids | bool or item.zone.name | length >= proxmox_networks_zone_id_min_length | int
+          - not proxmox_networks_validate_sdn_ids | bool or item.zone.name | length <= proxmox_networks_zone_id_max_length | int
+          - not proxmox_networks_validate_sdn_ids | bool or item.cloud_id is match('^[A-Za-z][A-Za-z0-9]*$')
+          - not proxmox_networks_validate_sdn_ids | bool or item.cloud_id | length >= proxmox_networks_vnet_id_min_length | int
+          - not proxmox_networks_validate_sdn_ids | bool or item.cloud_id | length <= proxmox_networks_vnet_id_max_length | int
         fail_msg: |
           Invalid Proxmox SDN configuration for Providentia network {{ item.network_id }} instance {{ item.cloud_id }}.
-          VNet IDs must be non-empty, VLAN zones must define zone.bridge, and VNet IDs are limited to {{ proxmox_networks_vnet_id_max_length }} characters by default.
+          SDN zone and VNet IDs must start with a letter, contain only letters and numbers, and be short identifiers.
+          Zone IDs must be {{ proxmox_networks_zone_id_min_length }}-{{ proxmox_networks_zone_id_max_length }} characters.
+          VNet IDs must be {{ proxmox_networks_vnet_id_min_length }}-{{ proxmox_networks_vnet_id_max_length }} characters.
+          VLAN zones must also define zone.bridge.
       loop: "{{ proxmox_networks_desired }}"
       loop_control:
         label: "{{ item.cloud_id | default(item.network_id) }}"
