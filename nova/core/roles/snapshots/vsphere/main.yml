@@ -20,10 +20,7 @@
       until: vm_tools.guests[0].guest_tools_status == "guestToolsRunning"
       retries: "{{ (snapshots_agent_info_timeout if snapshots_agent_info_timeout >= 5 else 5) / 5 }}"
       delay: 5
-      when:
-        - vcenter_vm_info.guests[0].guest_tools_status != "guestToolsRunning"
-        - vcenter_vm_info.guests[0].hw_power_status not in ["poweredOff", "suspended"]
-        - snapshot_mode != 'revert'
+      when: snapshot_mode == "live-snap"
 
 - name: Including powerstate role...
   ansible.builtin.include_role:
@@ -31,13 +28,13 @@
   vars:
     shutdown: true
   when:
-    - snapshot_mode == 'clean-snap' or snapshot_mode == 're-snap' or snapshot_mode == 'snap'
+    - snapshot_mode in ['clean-snap', 're-snap', 'snap']
     - not live_snap | bool
     - vcenter_vm_info.guests[0].hw_power_status != "poweredOff"
 
 - name: Including snapshot task...
   ansible.builtin.include_tasks: snapshot.yml
-  when: snapshot_mode == 'clean-snap' or snapshot_mode == 're-snap' or snapshot_mode == 'snap'
+  when: snapshot_mode in ['clean-snap', 're-snap', 'snap']
 
 - name: Including revert task...
   ansible.builtin.include_tasks: revert.yml

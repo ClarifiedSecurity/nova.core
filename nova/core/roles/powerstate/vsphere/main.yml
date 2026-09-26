@@ -24,9 +24,7 @@
       delay: 5
       when:
         - powerstate_vcenter_vm_info.guests[0].guest_tools_status != "guestToolsRunning"
-        - powerstate_vcenter_vm_info.guests[0].hw_power_status not in ["poweredOff", "suspended"]
-        - not reset
-        - not poweroff
+        - true in [(suspend | bool), (shutdown | bool), (shutdown | bool)]
 
     - name: Including {{ custom_vm_name | default(vm_name) }} poweroff tasks...
       ansible.builtin.include_tasks: poweroff.yml
