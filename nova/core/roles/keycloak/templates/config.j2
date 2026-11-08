@@ -195,6 +195,7 @@ clients:
     publicClient: {{ client.public_client | default(true) }}
     secret: {{ client.client_secret | default(omit) }}
     directAccessGrantsEnabled: {{ client.direct_access_grants_enabled | default(true) }}
+    fullScopeAllowed: false
     defaultClientScopes:
       {% if client.protocol | default('openid-connect') == 'saml' %}
       {% for scope in client.default_client_scopes | default(['saml_organization','role_list']) %}
