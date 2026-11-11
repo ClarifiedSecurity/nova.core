@@ -273,3 +273,5 @@
           community.vmware.vmware_guest:
             name: "{{ custom_vm_name | default(vm_name) }}"
             annotation: "{{ template_description if template else vm_description }}"
+          async: 3600
+          poll: 0
