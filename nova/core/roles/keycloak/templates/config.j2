@@ -11,6 +11,13 @@ ssoSessionMaxLifespan: "{{ realm.sso_session_max_lifespan }}"
 {% if realm.access_token_lifespan is defined %}
 accessTokenLifespan: "{{ realm.access_token_lifespan }}"
 {% endif %}
+{% if realm.offline_session_max_lifespan is defined %}
+offlineSessionMaxLifespanEnabled: true
+offlineSessionMaxLifespan: "{{ realm.offline_session_max_lifespan }}"
+{% endif %}
+{% if realm.offline_session_idle_timeout is defined %}
+offlineSessionIdleTimeout: "{{ realm.offline_session_idle_timeout }}"
+{% endif %}
 {% if realm.default_groups is defined %}
 defaultGroups: {{ realm.default_groups | to_json }}
 {% endif %}
@@ -209,7 +216,7 @@ clients:
       {% if client.create_client_scope | default(false) %}
       - {{ client.client_name }}-roles
       {% endif %}
-    optionalClientScopes: []
+    optionalClientScopes: {{ client.optional_client_scopes | default([]) | to_json }}
     {% if 'auth_flow_override_browser' in client %}
     authenticationFlowBindingOverrides:
       browser: {{ client.auth_flow_override_browser }}
@@ -217,8 +224,9 @@ clients:
     attributes:
       {% if client.protocol | default('openid-connect') == 'openid-connect' %}
       access.token.lifespan: {{ client.access_token_lifespan | default(omit) }}
-      client.session.max.lifespan: {{ client.client_session_max_lifespan | default(omit) }}
       client.session.idle.timeout: {{ client.client_session_idle_timeout | default(omit) }}
+      client.session.max.lifespan: {{ client.client_session_max_lifespan | default(omit) }}
+      oauth2.device.authorization.grant.enabled: {{ client.oauth2_device_authorization_grant_enabled | default(false) }}
       post.logout.redirect.uris: {{ client.post_logout_redirect_uris | join('##') | default('""')  }}
       {% endif %}
       {% if client.protocol | default('openid-connect') == 'saml' %}
