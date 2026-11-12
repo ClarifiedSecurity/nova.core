@@ -3,8 +3,8 @@
   community.proxmox.proxmox_vm_info:
     name: "{{ custom_vm_name | default(vm_name) }}"
   register: proxmox_vm_info
-  delegate_to: localhost
   become: false
+  delegate_to: localhost
 
 - name: ERROR
   ansible.builtin.fail:
