@@ -1,7 +1,7 @@
 ---
 - name: Getting IP for VM in {{ infra_env | upper }} environment...
   ansible.builtin.include_tasks: vsphere_or_proxmox/main.yml
-  when: infra_env in ['vsphere', 'proxmox']
+  when: infra_env in ['vsphere', 'proxmox', 'external']
 
 - name: Getting IP for VM in VMware Workstation environment...
   ansible.builtin.include_tasks: vmware_workstation/main.yml
