@@ -10,6 +10,8 @@
           Authorization: PVEAPIToken={{ proxmox_defaults.api_user }}!{{ proxmox_defaults.api_token_id }}={{ proxmox_defaults.api_token_secret }}
         method: GET
         validate_certs: "{{ proxmox_defaults.validate_certs }}"
+      retries: "{{ (configure_networking_command_wait_timeout if configure_networking_command_wait_timeout >= 3 else 3) // 3 }}"
+      delay: 3
       register: config_download
 
     - name: Saving /conf/config.xml to a temporary file...
@@ -123,6 +125,8 @@
           file: /tmp/config_{{ '%03d' | format(file_loop) }}.xml
         body_format: json
         validate_certs: "{{ proxmox_defaults.validate_certs }}"
+      retries: "{{ (configure_networking_command_wait_timeout if configure_networking_command_wait_timeout >= 3 else 3) // 3 }}"
+      delay: 3
       loop: "{{ file_contents.content | regex_findall('.{1,1700}') }}"
       loop_control:
         index_var: file_loop
@@ -144,9 +148,10 @@
             - sh
             - -c
             - "cat /tmp/config_*.xml > /conf/config.xml && rm -f /tmp/config_*.xml"
-            - reboot
         body_format: json
         validate_certs: "{{ proxmox_defaults.validate_certs }}"
+      retries: "{{ (configure_networking_command_wait_timeout if configure_networking_command_wait_timeout >= 3 else 3) // 3 }}"
+      delay: 3
       register: network_config_command
 
     - name: Including command run check task...
@@ -168,7 +173,7 @@
       ansible.builtin.include_tasks: main.yml
 
 # This is required for network config to take effect
-- name: Restarting {{ custom_vm_name | default(vm_name) }} VM...
+- name: Shutting down {{ custom_vm_name | default(vm_name) }} VM...
   ansible.builtin.include_role:
     name: nova.core.powerstate
   vars:
