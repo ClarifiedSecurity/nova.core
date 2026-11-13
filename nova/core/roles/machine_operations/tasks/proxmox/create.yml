@@ -172,6 +172,7 @@
       community.proxmox.proxmox_kvm:
         autostart: true
         cores: "{{ omit if not hardware_cpu else hardware_cpu }}"
+        cpu: "{{ omit if proxmox_machine_operations_operations_cpu_type == {} else proxmox_machine_operations_operations_cpu_type }}"
         description: "{{ vm_description }}"
         hotplug: "{{ machine_operations_proxmox_hotplug | join(',') }}"
         memory: "{{ omit if not hardware_ram else (hardware_ram * 1024) }}"
