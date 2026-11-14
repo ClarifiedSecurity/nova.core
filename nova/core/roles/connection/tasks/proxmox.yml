@@ -72,10 +72,10 @@
 
         - name: Setting connection_address for {{ custom_vm_name | default(vm_name) }}...
           ansible.builtin.set_fact:
-            connection_address:
-              "{{ proxmox_vm_info.proxmox_vms[0].network | map(attribute='ip-addresses', default=[]) |
-              flatten | map(attribute='ip-address') | ansible.utils.ipv6 |
-              reject('search', '^::1') | reject('search', '^fe80::') | difference(connection_static_ipv6_addresses | default([])) | first }}"
+            connection_address: "{{ proxmox_vm_info.proxmox_vms[0].network
+              | map(attribute='ip-addresses', default=[]) | flatten
+              | rejectattr('prefix', 'equalto', 128)
+              | map(attribute='ip-address') | ansible.utils.ipv6 | difference(connection_static_ipv6_addresses | default([])) | first }}"
 
 - name:
     Connecting as {{ template_username if fresh_deploy else ansible_deployer_username }} to {{ inventory_hostname }}
