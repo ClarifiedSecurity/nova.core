@@ -7,7 +7,7 @@
 - name: Including Windows tasks to fix broken trust...
   delegate_to: "{{ primary_domain_controller }}"
   when:
-    - secure_channel.stdout is search(".*ERROR_NO_LOGON_SERVERS.*")
+    - secure_channel.stdout is search(".*ERROR_NO_TRUST_SAM_ACCOUNT.*|.*ERROR_INVALID_PASSWORD.*")
     - join_domain_clean_broken_trust_account
   block:
     - name: Setting required facts for delegation...
@@ -31,7 +31,7 @@
 
 - name: Including Windows tasks for broken trust and domain remove...
   when: state == "workgroup"
-    or secure_channel.stdout is search(".*ERROR_NO_LOGON_SERVERS.*")
+    or secure_channel.stdout is search(".*ERROR_NO_TRUST_SAM_ACCOUNT.*|.*ERROR_INVALID_PASSWORD.*")
   block:
     - name: Adding machine to workgroup...
       microsoft.ad.membership:
