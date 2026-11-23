@@ -80,3 +80,7 @@
   loop_control:
     loop_var: networking_post_role
   when: configure_networking_post_roles != []
+
+- name: Stopping play for dm_create...
+  ansible.builtin.meta: end_host
+  when: dm_create | bool

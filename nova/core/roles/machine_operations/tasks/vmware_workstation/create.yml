@@ -9,9 +9,7 @@
     msg: "{{ custom_vm_name | default(vm_name) }} doesn't exist, run deploy or redeploy first!"
   when:
     - not vm_presence.stat.exists
-    - role_only is ansible.builtin.truthy
-      or role_only_wp is ansible.builtin.truthy
-      or single_role is defined
+    - not dm_default
 
 - name: Creating {{ machine_operations_vmware_workstation_template_export_folder }} folder...
   ansible.builtin.file:
@@ -37,8 +35,7 @@
       when:
         - not vm_template_presence.stat.exists or ((ansible_facts.date_time.epoch | int) - (vm_template_presence.stat.ctime | round)
           >= machine_operations_vmware_workstation_template_update_interval_days * 86400)
-        - not role_only
-        - not role_only_wp
+        - dm_default
       block:
         - name: Removing existing {{ vm_template }} template...
           ansible.builtin.file:
@@ -63,11 +60,10 @@
 
     - name: Checking for the correct deploy mode...
       ansible.builtin.fail:
-        msg: |
-          Virtual Machine {{ custom_vm_name | default(vm_name) }} doesn't exist, use the deploy command first!
+        msg: Virtual Machine {{ custom_vm_name | default(vm_name) }} doesn't exist, use the deploy command first!
       when:
-        - fresh_deploy
-        - role_only or role_only_wp or single_role is defined
+        - fresh_deploy is ansible.builtin.truthy
+        - single_role is defined
 
     - name: Create VM folder if it does not exist
       ansible.builtin.file:
@@ -163,7 +159,7 @@
   when:
     - machine_operations_vmware_workstation_enable_shared_folder
     - machine_operations_vmware_workstation_supported_shared_folder_os | intersect(group_names) | length > 0
-    - not role_only
+    - dm_default
   block:
     - name: Sharing VM folder with host...
       ansible.builtin.lineinfile:

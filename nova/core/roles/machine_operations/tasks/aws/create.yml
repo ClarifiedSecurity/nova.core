@@ -17,9 +17,7 @@
         msg: Virtual Machine {{ custom_vm_name | default(vm_name) }} doesn't exist, use the deploy command first!
       when:
         - fresh_deploy is ansible.builtin.truthy
-        - role_only is ansible.builtin.truthy
-          or role_only_wp is ansible.builtin.truthy
-          or single_role is defined
+        - single_role is defined
 
     - name: Including fresh deploy tasks...
       when: fresh_deploy
@@ -47,9 +45,7 @@
           when: ("os_windows" in group_names)
 
     - name: Configuring AWS EC2 instance for {{ inventory_hostname }}...
-      when:
-        - not role_only_wp # Not reconfiguring when running from pre_vm_role
-        - not role_only # Not reconfiguring on role only
+      when: dm_default
       block:
         - name: Getting all OS images...
           amazon.aws.ec2_ami_info:

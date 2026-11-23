@@ -25,11 +25,11 @@
   ansible.builtin.meta: flush_handlers
 
 - name: Getting IP and ending play...
-  when: role_only | bool
+  when: dm_customize | bool
   block:
     - name: Including get_ip role...
       ansible.builtin.include_role:
         name: nova.core.get_ip
 
-    - name: Ending play for role_only...
+    - name: Ending play for dm_customize...
       ansible.builtin.meta: end_host

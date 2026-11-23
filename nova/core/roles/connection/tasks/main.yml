@@ -71,9 +71,8 @@
 
 - name: Running different wait_for_connection methods based on OS...
   when:
-    - not role_only
-    - not role_only_wp
     - ansible_network_os | default('') != "fortinet.fortios.fortios"
+    - dm_default
   block:
     # false by default for MacOS but defaulting to true here to avoid errors on non-MacOS systems
     - name: Waiting for connection to {{ inventory_hostname }}...
@@ -104,8 +103,7 @@
   poll: 0 # Can have it run in the background and move on to the next task instead of waiting for it to finish
   when:
     - ansible_facts.system | default('') == "Win32NT"
-    - not role_only
-    - not role_only_wp
+    - dm_default
 
 # Temporary workaround for Ubuntu 26.04 since the sudo.rs does not currently work with become in Ansible
 # It's done here since it needs to happen at a very early stage of the deployment

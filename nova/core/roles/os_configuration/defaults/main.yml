@@ -18,12 +18,12 @@ wait_for_host: false # Set true to wait for external connection before moving on
 wait_for_port: 53 # Port to check in wait_for_address
 wait_for_timeout: 300 # How many seconds to wait for wait_for_address
 
-# Creates a snapshot when just_clone is true, set do false to skip snapshot creation
-os_configuration_create_snapshot_with_just_clone: true
+# Creates snapshot when dm_base variable is true, set to false to skip snapshot creation
+os_configuration_create_snapshot_with_dm_base: "{{ os_configuration_create_snapshot_with_just_clone | default(true) }}"
 
 # Set to true to keep the play running after creating snapshot
 # This can be useful when during development to have a snapshot created but still continue with the play
-deploy_with_mid_snapshot: false
+deploy_with_base_snapshot: false
 
 # Define your OS disk expansion role name in your host or group vars to included it with this role
 os_configuration_expand_os_disk_role_name: {}

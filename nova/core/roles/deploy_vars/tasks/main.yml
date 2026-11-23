@@ -1,4 +1,39 @@
 ---
+- name: NOTICE
+  when: just_create is defined
+    or just_clone is defined
+    or role_only is defined
+    or role_only_wp is defined
+    or deploy_vars_post_roles is defined
+  block:
+    - name: LEGACY VARIABLE
+      ansible.builtin.debug:
+        msg: |
+          You are using the following legacy variable(s):
+
+          {% for variable in legacy_variables %}
+          {% if lookup('vars', variable) is defined %}
+            - {{ variable }}
+          {% endif %}
+          {% endfor %}
+
+          Replace these legacy variables with their modern (dm_* prefixed) equivalents found in {{ role_path }}/defaults/main.yml.
+
+      vars:
+        legacy_variables:
+          - just_create
+          - just_clone
+          - role_only
+          - role_only_wp
+          - deploy_vars_post_roles
+      when: legacy_variables | select('defined') | list | length > 0
+
+    - name: SLEEPING TO READ
+      ansible.builtin.wait_for:
+        timeout: 30
+      become: false
+      delegate_to: localhost
+
 - name: IMMUTABLE
   ansible.builtin.fail:
     msg: "{{ inventory_hostname }} Has immutable variable or group set and won't be configured"

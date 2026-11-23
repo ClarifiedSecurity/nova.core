@@ -88,25 +88,39 @@
     - name: Flushing handlers...
       ansible.builtin.meta: flush_handlers
 
-    # This needs to be last because the play stops after that if just_clone or deploy_with_mid_snapshot is true
     - name: Creating snapshot, getting IP and stopping play...
-      when: just_clone | bool or deploy_with_mid_snapshot | bool
+      when:
+        dm_base | bool and os_configuration_create_snapshot_with_dm_base | bool
+        or deploy_with_base_snapshot | bool
       block:
+        - name: NOTICE
+          when: os_configuration_create_snapshot_with_just_clone is defined
+          block:
+            - name: LEGACY VARIABLE
+              ansible.builtin.debug:
+                msg: |
+                  *os_configuration_create_snapshot_with_just_clone* is a legacy variable replace it with *os_configuration_create_snapshot_with_dm_base*
+
+            - name: SLEEPING TO READ
+              ansible.builtin.wait_for:
+                timeout: 30
+              become: false
+              delegate_to: localhost
+
         - name: Including snapshots role...
           ansible.builtin.include_role:
             name: nova.core.snapshots
           vars:
-            snapshot_mode: snap
             live_snap: true
+            snapshot_mode: snap
             snapshot_name: Pre-customization
-          when: os_configuration_create_snapshot_with_just_clone | bool
 
-        - name: Stopping play if just_clone...
-          when: just_clone | bool
-          block:
-            - name: Including get_ip role...
-              ansible.builtin.include_role:
-                name: nova.core.get_ip
+    - name: Stopping play if just_clone...
+      when: dm_base | bool
+      block:
+        - name: Including get_ip role...
+          ansible.builtin.include_role:
+            name: nova.core.get_ip
 
-            - name: Stopping play...
-              ansible.builtin.meta: end_host
+        - name: Stopping play...
+          ansible.builtin.meta: end_host

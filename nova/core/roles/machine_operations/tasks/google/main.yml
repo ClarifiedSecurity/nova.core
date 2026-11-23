@@ -40,9 +40,7 @@
     msg: Virtual Machine {{ custom_vm_name | default(vm_name) }} doesn't exist, use the deploy command first!
   when:
     - fresh_deploy is ansible.builtin.truthy
-    - role_only is ansible.builtin.truthy
-      or role_only_wp is ansible.builtin.truthy
-      or single_role is defined
+    - not dm_default
 
 - name: Including {{ custom_vm_name | default(vm_name) }} removal tasks...
   ansible.builtin.include_tasks: remove.yml
@@ -53,14 +51,14 @@
   when:
     - interfaces != []
     - machine_operations_google_create_networks
-    - single_role is not defined
+    - dm_default
 
 - name: Including firewall rules creation tasks...
   ansible.builtin.include_tasks: create_firewall_rules.yml
   when:
     - interfaces != []
     - machine_operations_google_create_firewall_rules
-    - single_role is not defined
+    - dm_default
 
 - name: Including {{ custom_vm_name | default(vm_name) }} creation tasks...
   ansible.builtin.include_tasks: create.yml

@@ -40,3 +40,4 @@
 
 - name: Including {{ custom_vm_name | default(vm_name) }} creation tasks...
   ansible.builtin.include_tasks: create.yml
+  when: dm_default or fresh_deploy
