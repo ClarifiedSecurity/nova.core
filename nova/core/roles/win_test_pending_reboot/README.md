@@ -1,6 +1,6 @@
 # win_test_pending_reboot
 
-This role tests if a Windows host has a pending reboot. It downloads and installs the [PendingReboot](https://www.powershellgallery.com/packages/PendingReboot) PowerShell module from the PowerShell Gallery and uses it to check if a reboot is required.
+This role checks if a Windows host has a pending reboot and reboots it if necessary. It uses Ansible facts to determine the reboot status.
 
 ## Requirements
 
