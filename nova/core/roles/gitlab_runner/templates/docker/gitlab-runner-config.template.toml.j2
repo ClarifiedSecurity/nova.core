@@ -3,11 +3,14 @@
     executor = "docker"
 
   [runners.docker]
-    image = "{{ runner.executor_image | default(gitlab_runner_docker_executor_image) }}"
-    privileged = {{ runner.privileged | default(gitlab_runner_docker_privileged) | lower }}
     disable_cache = {{ runner.disable_cache | default(gitlab_runner_docker_disable_cache) | lower }}
     extra_hosts = {{ runner.extra_hosts | default(gitlab_runner_docker_extra_hosts) }}
+    image = "{{ runner.executor_image | default(gitlab_runner_docker_executor_image) }}"
+    privileged = {{ runner.privileged | default(gitlab_runner_docker_privileged) | lower }}
     volumes = {{ runner.executor_volumes | default(gitlab_runner_docker_executor_volumes) }}
+    {% if runner.helper_image is ansible.builtin.truthy or gitlab_runner_docker_helper_image is ansible.builtin.truthy %}
+    helper_image = "{{ runner.helper_image | default(gitlab_runner_docker_helper_image) }}"
+    {% endif %}
 {% if runner.allowed_privileged_services is defined %}
     services_privileged = {{ runner.services_privileged | lower }}
 {% endif %}

@@ -9,20 +9,23 @@ gitlab_runner_gitlab_url: "https://{{ gitlab_runner_gitlab_fqdn }}"
 gitlab_runner_gitlab_url_api: "https://{{ gitlab_runner_gitlab_fqdn }}/api/v4"
 
 ## Docker runner defaults
-gitlab_runner_docker_network: local-network
-gitlab_runner_docker_config_folder: /srv/gitlab-runner
-gitlab_runner_docker_version_tag: "{{ gitlab_runner_version }}"
 gitlab_runner_docker_concurrent: 10
-gitlab_runner_docker_executor_name: runner-docker
-gitlab_runner_docker_executor_image: ubuntu:22.04
-gitlab_runner_docker_privileged: false
+gitlab_runner_docker_config_folder: /srv/gitlab-runner
 gitlab_runner_docker_disable_cache: false
+gitlab_runner_docker_executor_image: ubuntu:22.04
+gitlab_runner_docker_executor_name: runner-docker
 gitlab_runner_docker_extra_volumes: []
+gitlab_runner_docker_network: local-network
+gitlab_runner_docker_privileged: false
+gitlab_runner_docker_version_tag: "{{ gitlab_runner_version }}"
 gitlab_runner_docker_extra_hosts:
   - "{{ gitlab_runner_gitlab_fqdn }}:{{ hostvars[gitlab_runner_gitlab_inventory_hostname].egress_nic_ipv4 }}"
 gitlab_runner_docker_executor_volumes:
   - /cache
   - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+
+# Docker helper image name, if left empty it will use the default helper image
+gitlab_runner_docker_helper_image: {}
 
 ## Windows powershell runner defaults
 gitlab_runner_windows_config_folder: C:\gitlab-runner
