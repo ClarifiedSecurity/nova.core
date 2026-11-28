@@ -27,7 +27,7 @@
           become: false
           register: proxmox_vm_info
           until:
-            - not proxmox_vm_info.failed
+            - proxmox_vm_info.proxmox_vms[0].network is defined
             - proxmox_vm_info.proxmox_vms[0].network | map(attribute='ip-addresses', default=[]) |
               flatten | map(attribute='ip-address') | ansible.utils.ipv4 |
               reject('search', '^127\\.') | reject('search', '^169.254\\.') | difference(connection_static_ipv4_addresses | default([])) != []
@@ -63,7 +63,7 @@
           become: false
           register: proxmox_vm_info
           until:
-            - not proxmox_vm_info.failed
+            - proxmox_vm_info.proxmox_vms[0].network is defined
             - proxmox_vm_info.proxmox_vms[0].network | map(attribute='ip-addresses', default=[]) |
               flatten | map(attribute='ip-address') | ansible.utils.ipv6 |
               reject('search', '^::1') | reject('search', '^fe80::') | difference(connection_static_ipv6_addresses | default([])) != []
