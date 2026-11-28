@@ -13,28 +13,22 @@
             name: nova.core.updates
           when: update_system
 
+        - name: Including Windows finalization tasks...
+          ansible.builtin.include_tasks: windows.yml
+          when: ansible_facts.system | default('') == 'Win32NT'
+
+        - name: Including Unix finalization tasks...
+          ansible.builtin.include_tasks: unix.yml
+          when: ansible_facts.system | default('') in ["FreeBSD", "Linux"]
+
+        - name: Including VyOS finalization tasks...
+          ansible.builtin.include_tasks: vyos.yml
+          when: ansible_network_os | default('') == 'vyos.vyos.vyos'
+
         - name: Including cleanup role...
           ansible.builtin.include_role:
             name: nova.core.cleanup
           when: finalize_cleanup_system
-
-        - name: Creation accounts for non-Network OS accounts...
-          when: ansible_network_os is not defined
-          block:
-            - name: Including Windows finalization tasks...
-              ansible.builtin.include_tasks: windows.yml
-              when: ansible_facts.system | default('') == 'Win32NT'
-
-            - name: Including Unix finalization tasks...
-              ansible.builtin.include_tasks: unix.yml
-              when: ansible_facts.system | default('') in ["FreeBSD", "Linux"]
-
-        - name: Configuring Network OS accounts...
-          when: ansible_network_os is defined
-          block:
-            - name: Including VyOS finalization tasks...
-              ansible.builtin.include_tasks: vyos.yml
-              when: ansible_network_os | default('') == 'vyos.vyos.vyos'
 
 - name: Including metadata posting role...
   ansible.builtin.include_role:
